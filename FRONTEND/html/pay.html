@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="../image/icon.img/logo_web.png" type="image/png" />
+  <title>Thanh toán - Aqualife</title>
+  <link rel="stylesheet" href="../css/base.css" />
+  <script defer src="../js/common.js"></script>
+  <script defer src="../js/cart.js"></script>
+  <script defer src="../js/pay.js"></script>
+</head>
+
+<body>
+  <header class="site-header">
+    <div class="container header-row">
+      <a class="brand" href="home.html">Aqualife</a>
+      <nav class="main-nav">
+        <a href="home.html">Trang chủ</a>
+        <a href="about.html">Về chúng tôi</a>
+        <a href="products.html">Sản phẩm</a>
+        <a href="contact.html">Liên hệ</a>
+      </nav>
+      <nav>
+        <a class="cart-link" href="auth.html">Đăng nhập <img src="../image/icon.img/auth.png" alt="Đăng nhập"
+            class="nav-icon"></a>
+        <a class="cart-link cart-link--cart" href="cart.html">Giỏ hàng <img src="../image/icon.img/cart.png"
+            alt="Giỏ hàng" class="nav-icon"> <span class="badge" data-cart-count>0</span></a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page">
+    <section class="checkout-section">
+      <div class="container checkout-grid">
+
+        <div class="checkout-form card">
+          <h2>Thông tin khách hàng</h2>
+          <form id="checkout-form">
+            <div class="field-grid">
+              <div class="field-group">
+                <label for="last-name">Họ</label>
+                <input id="last-name" class="input" type="text" placeholder="Nhập họ" />
+              </div>
+              <div class="field-group">
+                <label for="first-name">Tên</label>
+                <input id="first-name" class="input" type="text" placeholder="Nhập tên" />
+              </div>
+            </div>
+
+            <div class="field-group">
+              <label for="address">Địa chỉ</label>
+              <input id="address" class="input" type="text" placeholder="Nhập địa chỉ" />
+            </div>
+
+            <div class="field-grid">
+              <div class="field-group">
+                <label for="province">Tỉnh</label>
+                <input id="province" class="input" type="text" placeholder="Nhập tỉnh" />
+              </div>
+              <div class="field-group">
+                <label for="phone">Số điện thoại</label>
+                <input id="phone" class="input" type="tel" placeholder="Nhập số điện thoại" />
+              </div>
+            </div>
+
+            <div class="field-group">
+              <label for="email">Email</label>
+              <input id="email" class="input" type="email" placeholder="Nhập email" />
+            </div>
+
+            <div class="field-group">
+              <label for="notes">Ghi chú bổ sung</label>
+              <textarea id="notes" class="textarea" rows="4" placeholder="Ghi chú (không bắt buộc)"></textarea>
+            </div>
+          </form>
+        </div>
+
+        <aside class="checkout-summary card">
+          <h2>Thông tin đơn hàng</h2>
+          <div id="order-list" class="order-list"></div>
+          <div class="order-total">
+            <span>Tổng thanh toán</span>
+            <strong id="order-total">0 ₫</strong>
+          </div>
+
+          <div class="field-group">
+            <label>Phương thức thanh toán</label>
+            <div class="payment-options">
+              <label><input type="radio" name="payment" value="cash" checked /> Tiền mặt</label>
+              <label><input type="radio" name="payment" value="transfer" /> Chuyển khoản</label>
+            </div>
+          </div>
+
+          <button id="place-order" class="btn btn-primary" type="button">Đặt hàng</button>
+          <div id="order-feedback" class="alert hidden"></div>
+        </aside>
+
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer footer-minimal">
+    <div class="footer-container">
+        <div class="footer-bottom">© 2026 Aqualife | <a href="about.html">Điều khoản</a> | <a href="contact.html">Chính sách bảo mật</a></div>
+    </div>
+  </footer>
+</body>
+
+</html>

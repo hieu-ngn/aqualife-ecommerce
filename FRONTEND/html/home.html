@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="../image/icon.img/logo_web.png" type="image/png" />
+  <title>Trang chủ - Aqualife</title>
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/home.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script defer src="../js/common.js"></script>
+  <script defer src="../js/home.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-row">
+      <a class="brand" href="home.html">Aqualife</a>
+      <nav class="main-nav">
+        <a class="active" href="home.html">Trang chủ</a>
+        <a href="about.html">Về chúng tôi</a>
+        <a href="products.html">Sản phẩm</a>
+        <a href="contact.html">Liên hệ</a>
+      </nav>
+      <nav>
+        <a class="cart-link" href="auth.html">Đăng nhập <img src="../image/icon.img/auth.png" alt="Đăng nhập" class="nav-icon"></a>
+        <a class="cart-link cart-link--cart" href="cart.html">Giỏ hàng <img src="../image/icon.img/cart.png" alt="Giỏ hàng" class="nav-icon"> <span class="badge" data-cart-count>0</span></a>
+      </nav>
+    </div>
+  </header>
+
+      <!-- HERO -->
+<div class="hero">
+  <video class="hero-video" autoplay muted loop playsinline>
+    <source src="../video/video-nen.mp4" type="video/mp4">
+    Trình duyệt của bạn không hỗ trợ video.
+  </video>
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <h1>Tận hưởng vẻ đẹp đại dương ngay tại nhà</h1>
+    <button onclick="window.location.href='products.html'">Mua ngay</button>
+  </div>
+</div>
+
+<!-- CATEGORY -->
+<div class="section">
+  <h2>Danh mục</h2>
+  <div class="categories">
+    <a href="products.html?category=freshwater" class="card">🐟 Nước ngọt</a>
+    <a href="products.html?category=brackish" class="card">🪸 Nước lợ</a>
+    <a href="products.html?category=saltwater" class="card">🌊 Nước mặn</a>
+  </div>
+</div>
+
+<!-- PRODUCTS -->
+<div class="section">
+  <h2>Sản phẩm nổi bật</h2>
+  <div class="products" id="product-list"></div>
+</div>
+
+<!-- CART -->
+<div class="cart-box" id="cartBox">
+  <h4>Giỏ hàng</h4>
+  <ul id="cart-items"></ul>
+</div>
+
+<section class="features">
+  <div class="feature-item">
+    <div class="icon blue">✔</div>
+    <h3>Cam kết giao hàng sống khỏe</h3>
+    <p>
+      Chúng tôi cam kết sinh vật đến tay bạn luôn trong tình trạng khỏe mạnh nhất.
+      Hoàn tiền 100% nếu có rủi ro vận chuyển.
+    </p>
+  </div>
+
+  <div class="feature-item">
+    <div class="icon brown">🐠</div>
+    <h3>Nguồn cung bền vững</h3>
+    <p>
+      Mọi cá thể đều được nhập khẩu chính ngạch, đảm bảo quy trình khai thác bền vững
+      và bảo vệ môi trường biển.
+    </p>
+  </div>
+
+  <div class="feature-item">
+    <div class="icon light">🎧</div>
+    <h3>Tư vấn trọn đời</h3>
+    <p>
+      Đội ngũ chuyên gia luôn sẵn sàng tư vấn kỹ thuật nuôi dưỡng trọn đời cho mọi
+      khách hàng của Aqualife.
+    </p>
+  </div>
+</section>
+
+<!-- TESTIMONIAL -->
+<section class="testimonial">
+  <p class="tag">Khách hàng nói gì về chúng tôi</p>
+  <h2>"Tiếng vọng từ đại dương"</h2>
+  <p class="sub">Lắng nghe những chia sẻ từ cộng đồng đam mê thủy sinh.</p>
+
+  <div class="testimonial-wrapper">
+
+    <!-- LEFT -->
+    <div class="testimonial-left">
+      <div class="stars">★★★★★</div>
+      <p class="quote">
+        "Chưa bao giờ tôi nhận được những chú cá khỏe mạnh và màu sắc tuyệt vời như vậy khi mua online. Aqualife thực sự là nơi uy tín nhất."
+      </p>
+      <div class="author">
+        <strong>Anh Hoàng Dương</strong>
+        <span>Người chơi cá lâu năm</span>
+      </div>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="testimonial-right">
+      <div class="stars">★★★★★</div>
+      <p class="quote">
+        "Dịch vụ thiết kế bể cá biển của Aqualife đã biến phòng khách của tôi thành một thủy cung thu nhỏ đầy nghệ thuật. Đội ngũ kỹ thuật rất tận tâm."
+      </p>
+      <div class="author">
+        <strong>Chị Hồng Diệp</strong>
+        <span>Trưởng phòng BA</span>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer footer-full">
+  <div class="footer-container">
+    <div class="footer-col">
+      <h3>Aqualife</h3>
+      <p>Mang cả hệ sinh thái biển vào không gian sống của bạn với dịch vụ và sản phẩm cao cấp.</p>
+      <div class="social">
+        <a href="https://www.facebook.com/Cacanhthienduc/" target="_blank" rel="noreferrer" aria-label="Facebook">
+          <i class="fa-brands fa-facebook social-icon facebook"></i>
+        </a>
+        <a href="https://www.instagram.com/cristiano/" target="_blank" rel="noreferrer" aria-label="Instagram">
+          <i class="fa-brands fa-instagram social-icon instagram"></i>
+        </a>
+        <a href="https://www.youtube.com/@traicacanhthienuc8674" target="_blank" rel="noreferrer" aria-label="YouTube">
+          <i class="fa-brands fa-youtube social-icon youtube"></i>
+        </a>
+      </div>
+    </div>
+    <div class="footer-col">
+      <h4>THÔNG TIN LIÊN HỆ</h4>
+      <p>207 Đ. Giải Phóng, Đồng Tâm, Bạch Mai, Hà Nội</p>
+      <p>086 781 7946</p>
+      <p>info@aqualife.com</p>
+    </div>
+    <div class="footer-col">
+      <h4>LIÊN KẾT NHANH</h4>
+      <a href="about.html">Về chúng tôi</a>
+      <a href="contact.html">Chính sách vận chuyển</a>
+      <a href="products.html">Hướng dẫn mua hàng</a>
+      <a href="about.html">Điều khoản & điều kiện</a>
+    </div>
+    <div class="footer-col">
+      <h4>NEWSLETTER</h4>
+      <p>Đăng ký để nhận tin tức và ưu đãi</p>
+      <div class="newsletter">
+        <input type="email" placeholder="Email của bạn">
+        <button type="button">Đăng ký</button>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom">© 2026 Aqualife | The Ocean Curator</div>
+</footer>
+</body>
+</html>

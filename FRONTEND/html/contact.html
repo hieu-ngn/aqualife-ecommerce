@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="../image/icon.img/logo_web.png" type="image/png" />
+  <title>Liên hệ - Aqualife</title>
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/contact.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script defer src="../js/common.js"></script>
+  <script defer src="../js/contact.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-row">
+      <a class="brand" href="home.html">Aqualife</a>
+      <nav class="main-nav">
+        <a href="home.html">Trang chủ</a>
+        <a href="about.html">Về chúng tôi</a>
+        <a href="products.html">Sản phẩm</a>
+        <a class="active" href="contact.html">Liên hệ</a>
+      </nav>
+      <nav>
+        <a class="cart-link" href="auth.html">Đăng nhập <img src="../image/icon.img/auth.png" alt="Đăng nhập" class="nav-icon"></a>
+        <a class="cart-link cart-link--cart" href="cart.html">Giỏ hàng <img src="../image/icon.img/cart.png" alt="Giỏ hàng" class="nav-icon"> <span class="badge" data-cart-count>0</span></a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page">
+    <div class="container">
+      <h1>Liên hệ Aqualife</h1>
+      <div class="contact-grid">
+        <section class="card">
+          <form id="contact-form">
+            <div class="grid" style="gap:10px;">
+              <input class="input" type="text" name="name" placeholder="Họ và tên" />
+              <input class="input" type="email" name="email" placeholder="Email" />
+              <textarea class="textarea" name="message" placeholder="Nội dung liên hệ" cols="30" rows="10"></textarea>
+              <button class="btn btn-primary" type="submit">Gửi liên hệ</button>
+            </div>
+          </form>
+          <div id="contact-result" class="alert hidden"></div>
+        </section>
+
+        <aside class="card contact-meta">
+          <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d29798.511507000305!2d105.80645031083982!3d21.000094200000003!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3135ac71752d8f79%3A0xd2ec575c01017afa!2zVHLGsOG7nW5nIMSQ4bqhaSBI4buNYyBLaW5oIFThur8gUXXhu5FjIETDom4gKE5FVSk!5e0!3m2!1svi!2s!4v1775115133473!5m2!1svi!2s" width="100%" height="200" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>         
+          <div class="line"><strong>Điện thoại:</strong> 086 781 7946</div>
+          <div class="line"><strong>Email:</strong> info@aqualife.com</div>
+          <div class="line"><strong>Giờ làm việc:</strong> 8:00 - 23:59 (T2 - CN)</div>
+        </aside>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer footer-full">
+    <div class="footer-container">
+      <div class="footer-col">
+        <h3>Aqualife</h3>
+        <p>Mang cả hệ sinh thái biển vào không gian sống của bạn với dịch vụ và sản phẩm cao cấp.</p>
+        <div class="social">
+          <a href="https://www.facebook.com/Cacanhthienduc/" target="_blank" rel="noreferrer" aria-label="Facebook">
+            <i class="fa-brands fa-facebook social-icon facebook"></i>
+          </a>
+          <a href="https://www.instagram.com/cristiano/" target="_blank" rel="noreferrer" aria-label="Instagram">
+            <i class="fa-brands fa-instagram social-icon instagram"></i>
+          </a>
+          <a href="https://www.youtube.com/@traicacanhthienuc8674" target="_blank" rel="noreferrer" aria-label="YouTube">
+            <i class="fa-brands fa-youtube social-icon youtube"></i>
+          </a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h4>THÔNG TIN LIÊN HỆ</h4>
+        <p>207 Đ. Giải Phóng, Đồng Tâm, Bạch Mai, Hà Nội</p>
+        <p>086 781 7946</p>
+        <p>info@aqualife.com</p>
+      </div>
+      <div class="footer-col">
+        <h4>LIÊN KẾT NHANH</h4>
+        <a href="about.html">Về chúng tôi</a>
+        <a href="contact.html">Chính sách vận chuyển</a>
+        <a href="products.html">Hướng dẫn mua hàng</a>
+        <a href="about.html">Điều khoản & điều kiện</a>
+      </div>
+      <div class="footer-col">
+        <h4>NEWSLETTER</h4>
+        <p>Đăng ký để nhận tin tức và ưu đãi</p>
+        <div class="newsletter">
+          <input type="email" placeholder="Email của bạn">
+          <button type="button">Đăng ký</button>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">© 2026 Aqualife | The Ocean Curator</div>
+  </footer>
+</body>
+</html>
