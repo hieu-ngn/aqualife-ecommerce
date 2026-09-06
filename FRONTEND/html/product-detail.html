@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="../image/icon.img/logo_web.png" type="image/png" />
+  <title>Chi tiết sản phẩm - Aqualife</title>
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/product-detail.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script defer src="../js/common.js"></script>
+  <script defer src="../js/product-detail.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-row">
+      <a class="brand" href="home.html">Aqualife</a>
+      <nav class="main-nav">
+        <a href="home.html">Trang chủ</a>
+        <a href="about.html">Về chúng tôi</a>
+        <a class="active" href="products.html">Sản phẩm</a>
+        <a href="contact.html">Liên hệ</a>
+      </nav>
+      <nav>
+        <a class="cart-link" href="auth.html">Đăng nhập <img src="../image/icon.img/auth.png" alt="Đăng nhập" class="nav-icon"></a>
+        <a class="cart-link cart-link--cart" href="cart.html">Giỏ hàng <img src="../image/icon.img/cart.png" alt="Giỏ hàng" class="nav-icon"> <span class="badge" data-cart-count>0</span></a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page">
+    <div class="container">
+      <p><a class="btn btn-ghost" href="products.html">← Quay lại danh sách</a></p>
+
+      <section class="detail">
+        <div class="detail-media">
+          <img id="detail-image" src="../image/ocean-bg.svg" alt="Sản phẩm" />
+        </div>
+
+        <article class="card detail-info">
+          <h1 id="detail-name">Đang tải...</h1>
+          <p class="price" id="detail-price"></p>
+          <p><strong>Loài:</strong> <span id="detail-species"></span></p>
+          <p><strong>Môi trường:</strong> <span id="detail-water-type"></span></p>
+          <p class="muted" id="detail-description"></p>
+
+          <div class="inline-form">
+            <input id="detail-quantity" class="input" type="number" min="1" value="1" />
+            <button id="detail-add" class="btn btn-primary" type="button">Thêm vào giỏ</button>
+          </div>
+        </article>
+      </section>
+
+      <h2 class="related-title">Sản phẩm liên quan</h2>
+      <div id="related-products" class="grid grid-3"></div>
+    </div>
+  </main>
+
+  <footer class="footer footer-full">
+    <div class="footer-container">
+      <div class="footer-col">
+        <h3>Aqualife</h3>
+        <p>Mang cả hệ sinh thái biển vào không gian sống của bạn với dịch vụ và sản phẩm cao cấp.</p>
+        <div class="social">
+          <a href="https://www.facebook.com/Cacanhthienduc/" target="_blank" rel="noreferrer" aria-label="Facebook">
+            <i class="fa-brands fa-facebook social-icon facebook"></i>
+          </a>
+          <a href="https://www.instagram.com/cristiano/" target="_blank" rel="noreferrer" aria-label="Instagram">
+            <i class="fa-brands fa-instagram social-icon instagram"></i>
+          </a>
+          <a href="https://www.youtube.com/@traicacanhthienuc8674" target="_blank" rel="noreferrer" aria-label="YouTube">
+            <i class="fa-brands fa-youtube social-icon youtube"></i>
+          </a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h4>THÔNG TIN LIÊN HỆ</h4>
+        <p>207 Đ. Giải Phóng, Đồng Tâm, Bạch Mai, Hà Nội</p>
+        <p>086 781 7946</p>
+        <p>info@aqualife.com</p>
+      </div>
+      <div class="footer-col">
+        <h4>LIÊN KẾT NHANH</h4>
+        <a href="about.html">Về chúng tôi</a>
+        <a href="contact.html">Chính sách vận chuyển</a>
+        <a href="products.html">Hướng dẫn mua hàng</a>
+        <a href="about.html">Điều khoản & điều kiện</a>
+      </div>
+      <div class="footer-col">
+        <h4>NEWSLETTER</h4>
+        <p>Đăng ký để nhận tin tức và ưu đãi</p>
+        <div class="newsletter">
+          <input type="email" placeholder="Email của bạn">
+          <button type="button">Đăng ký</button>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">© 2026 Aqualife | The Ocean Curator</div>
+  </footer>
+</body>
+</html>

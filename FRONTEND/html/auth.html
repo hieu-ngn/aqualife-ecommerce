@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="../image/icon.img/logo_web.png" type="image/png" />
+  <title>Đăng nhập - Aqualife</title>
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/auth.css" />
+  <script defer src="../js/common.js"></script>
+  <script defer src="../js/auth.js"></script>
+</head>
+<body class="auth-page">
+  <!-- Video Background -->
+  <video autoplay muted loop class="background-video">
+    <source src="../video/backgroundVideo.mp4" type="video/mp4">
+  </video>
+  
+  <!-- Overlay for better text readability -->
+  <div class="video-overlay"></div>
+
+  <header class="site-header">
+    <div class="container header-row">
+      <a class="brand" href="home.html">Aqualife</a>
+      <nav class="main-nav">
+        <a href="home.html">Trang chủ</a>
+        <a href="about.html">Về chúng tôi</a>
+        <a href="products.html">Sản phẩm</a>
+        <a href="contact.html">Liên hệ</a>
+      </nav>
+      <nav>
+        <a class="cart-link" href="auth.html">Đăng nhập <img src="../image/icon.img/auth.png" alt="Đăng nhập" class="nav-icon"></a>
+        <a class="cart-link cart-link--cart" href="cart.html">Giỏ hàng <img src="../image/icon.img/cart.png" alt="Giỏ hàng" class="nav-icon"> <span class="badge" data-cart-count>0</span></a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page auth-wrap">
+    <div class="container">
+      <section class="card auth-card">
+        <div class="auth-head">
+          <h1>Đăng nhập</h1>
+          <p class="muted">Nhập thông tin để truy cập tài khoản.</p>
+        </div>
+
+        <form id="auth-form" class="grid" style="gap:10px;">
+          <input class="input" name="email" type="email" placeholder="Email" />
+          <input class="input" name="password" type="password" placeholder="Mật khẩu" />
+          <button class="btn btn-primary" type="submit">Đăng nhập</button>
+        </form>
+
+        <div id="auth-result" class="alert hidden"></div>
+        <p class="muted">Chưa có tài khoản? <a href="register.html"><strong>Đăng ký</strong></a></p>
+      </section>
+    </div>
+  </main>
+
+  <footer class="footer footer-minimal">  
+    <div class="footer-bottom" style="color: aliceblue;">© 2026 Aqualife | <a href="about.html" style="color: aliceblue;">Điều khoản</a> | <a href="contact.html" style="color: aliceblue;">Chính sách bảo mật</a></div>  
+  </footer>
+</body>
+</html>

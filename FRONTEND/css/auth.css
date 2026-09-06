@@ -1,0 +1,100 @@
+.auth-wrap {
+  min-height: calc(100vh - 170px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.auth-wrap .container {
+  margin: 0;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.auth-card {
+  width: min(520px, 100%);
+  position: relative;
+
+  /* GIẢM opacity xuống mạnh */
+  background: rgba(255, 255, 255, 0.06);
+
+  /* Tăng blur lên */
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+
+  /* Viền mảnh hơn */
+  border: 1px solid rgba(255, 255, 255, 0.18);
+
+  border-radius: 20px;
+
+  /* Shadow nhẹ hơn để không bị “đục” */
+  box-shadow: 
+    0 4px 20px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+
+  padding: 18px;
+}
+
+
+.auth-head {
+  margin-bottom: 14px;
+}
+
+.auth-head h1 {
+  margin: 0 0 6px;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--primary);
+  
+}
+
+/* Làm mờ các input fields để match với card */
+.auth-card .input {
+  background: rgba(255, 255, 255, 0.1); /* Background trắng rất mờ */
+  backdrop-filter: blur(10px); /* Blur nhẹ */
+  border: 1px solid rgba(255, 255, 255, 0.2); /* Viền trong suốt */
+  color: rgba(255, 255, 255, 0.9); /* Text màu trắng mờ */
+}
+
+.auth-card .input::placeholder {
+  color: rgba(255, 255, 255, 0.6); /* Placeholder mờ hơn */
+}
+
+.auth-card .input:focus {
+  background: rgba(255, 255, 255, 0.15); /* Tăng opacity khi focus */
+  border-color: rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 1); /* Text trắng rõ hơn khi focus */
+}
+/* Video Background Styles */
+.background-video {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: -1;
+}
+
+.video-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: -1;
+}
+
+/* Ensure header and footer are visible over video */
+.auth-page .site-header {
+  position: relative;
+  z-index: 10;
+}
+
+.auth-page .site-footer {
+  position: relative;
+  z-index: 10;
+}
