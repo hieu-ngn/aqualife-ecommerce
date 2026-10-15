@@ -1,8 +1,9 @@
 import re
 
-from flask import request
+from flask import g, request, session
 
 from services import auth_service
+from middleware.auth import login_required
 from utils.responses import success, error
 
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
@@ -40,3 +41,38 @@ def register():
         return error("Email đã được đăng ký", 409)
 
     return success(user, 201)
+
+
+def login():
+    body = request.get_json(silent=True) or {}
+    if not isinstance(body, dict):
+        return error("Dữ liệu gửi lên không hợp lệ", 400)
+
+    email_value = body.get("email")
+    password_value = body.get("password")
+    email = email_value.strip().lower() if isinstance(email_value, str) else ""
+    password = password_value if isinstance(password_value, str) else ""
+
+    if not email or not password:
+        return error("Vui lòng nhập email và mật khẩu", 422)
+
+    try:
+        user = auth_service.authenticate_user(email, password)
+    except auth_service.InvalidCredentialsError:
+        return error("Email hoặc mật khẩu không đúng", 401)
+    except auth_service.InactiveUserError:
+        return error("Tài khoản đã bị khóa", 403)
+
+    session.clear()
+    session["user_id"] = user["id"]
+    return success(user)
+
+
+def logout():
+    session.clear()
+    return success({"message": "Đã đăng xuất"})
+
+
+@login_required
+def me():
+    return success(g.current_user)
