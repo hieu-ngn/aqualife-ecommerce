@@ -6,7 +6,31 @@ Database: `aqualife`
 
 DBMS: PostgreSQL
 
-## 2. Main Entities
+## 2. Connect with pgAdmin 4 and the backend
+
+Register the local PostgreSQL server in pgAdmin 4 using the host, port, and
+credentials configured for your PostgreSQL installation. Create a database
+named `aqualife` if it does not already exist.
+
+Set `DATABASE_URL` in `BACKEND/.env` to:
+
+```text
+postgresql://<username>:<password>@localhost:5432/aqualife
+```
+
+Use the PostgreSQL role password (not the pgAdmin password). URL-encode any
+special characters in the username or password. The backend loads this file
+when started from either the repository root or the `BACKEND` directory.
+
+The schema is in `DATABASE/schema.sql`. Run it in pgAdmin's Query Tool only
+when initializing an empty database: the script drops and recreates the
+project tables and therefore deletes existing table data.
+
+Start the API from `BACKEND` with `venv\Scripts\python.exe app.py` on Windows.
+Check `http://localhost:5000/api/health`; a successful response includes
+`"db": "connected"`.
+
+## 3. Main Entities
 
 - users
 - categories
@@ -17,7 +41,7 @@ DBMS: PostgreSQL
 - order_items
 - reviews
 
-## 3. users
+## 4. users
 
 ```text
 id              BIGSERIAL PRIMARY KEY
@@ -46,7 +70,7 @@ active
 inactive
 ```
 
-## 4. categories
+## 5. categories
 
 ```text
 id              BIGSERIAL PRIMARY KEY
@@ -57,7 +81,7 @@ created_at      TIMESTAMP
 updated_at      TIMESTAMP
 ```
 
-## 5. products
+## 6. products
 
 ```text
 id              BIGSERIAL PRIMARY KEY
@@ -86,7 +110,7 @@ active
 inactive
 ```
 
-## 6. cart
+## 7. cart
 
 ```text
 id              BIGSERIAL PRIMARY KEY
@@ -97,7 +121,7 @@ updated_at      TIMESTAMP
 
 Each customer has at most one active cart.
 
-## 7. cart_items
+## 8. cart_items
 
 ```text
 id              BIGSERIAL PRIMARY KEY
@@ -113,7 +137,7 @@ quantity > 0
 UNIQUE(cart_id, product_id)
 ```
 
-## 8. orders
+## 9. orders
 
 ```text
 id                BIGSERIAL PRIMARY KEY
@@ -146,7 +170,7 @@ cod
 bank_transfer
 ```
 
-## 9. order_items
+## 10. order_items
 
 ```text
 id              BIGSERIAL PRIMARY KEY
@@ -160,7 +184,7 @@ subtotal        NUMERIC(12,2) NOT NULL
 
 Store `product_name` and `unit_price` as historical snapshots so old orders remain correct after a product is edited.
 
-## 10. reviews
+## 11. reviews
 
 ```text
 id              BIGSERIAL PRIMARY KEY
@@ -184,7 +208,7 @@ Optionally:
 UNIQUE(user_id, product_id)
 ```
 
-## 11. Relationships
+## 12. Relationships
 
 ```text
 users 1---1 cart
@@ -201,7 +225,7 @@ users 1---N reviews
 products 1---N reviews
 ```
 
-## 12. Admin Dashboard Queries
+## 13. Admin Dashboard Queries
 
 Dashboard should derive its metrics from orders/products/users.
 
@@ -247,7 +271,7 @@ Aggregate `order_items` belonging to completed orders.
 
 Filter products where `stock` is below a configurable threshold.
 
-## 13. Important Indexes
+## 14. Important Indexes
 
 Recommended:
 
@@ -264,7 +288,7 @@ order_items(product_id)
 reviews(product_id)
 ```
 
-## 14. Checkout Transaction
+## 15. Checkout Transaction
 
 ```text
 BEGIN
@@ -288,7 +312,7 @@ On any critical error:
 ROLLBACK
 ```
 
-## 15. Data Integrity
+## 16. Data Integrity
 
 - Never allow negative stock.
 - Never allow negative prices.
