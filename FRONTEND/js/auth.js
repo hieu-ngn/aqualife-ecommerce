@@ -3,26 +3,39 @@ document.addEventListener("DOMContentLoaded", () => {
   const result = document.getElementById("auth-result");
   if (!form || !result) return;
 
-  form.addEventListener("submit", (event) => {
+  function showMessage(type, text) {
+    result.className = `alert alert-${type}`;
+    result.textContent = text;
+    result.classList.remove("hidden");
+  }
+
+  form.addEventListener("submit", async (event) => {
     event.preventDefault();
 
     const email = String(form.elements.namedItem("email")?.value || "").trim();
     const password = String(form.elements.namedItem("password")?.value || "");
 
     if (!email || !password) {
-      result.className = "alert alert-error";
-      result.textContent = "Vui lòng nhập email và mật khẩu.";
-      result.classList.remove("hidden");
+      showMessage("error", "Vui lòng nhập email và mật khẩu.");
       return;
     }
 
-    localStorage.setItem("aqualife_user", email);
-    result.className = "alert alert-success";
-    result.textContent = "Đăng nhập thành công! Chuyển hướng đến trang chủ...";
-    result.classList.remove("hidden");
+    const button = form.querySelector('button[type="submit"]');
+    if (button) button.disabled = true;
 
-    setTimeout(() => {
-      window.location.href = "home.html";
-    }, 700);
+    try {
+      const user = await window.Aqualife.apiFetch("/auth/login", {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+      });
+      localStorage.setItem("aqualife_user", user.email);
+      showMessage("success", "Đăng nhập thành công! Chuyển hướng đến trang chủ...");
+      setTimeout(() => {
+        window.location.href = "home.html";
+      }, 700);
+    } catch (error) {
+      showMessage("error", error.message);
+      if (button) button.disabled = false;
+    }
   });
 });

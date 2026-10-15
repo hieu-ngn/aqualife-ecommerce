@@ -65,6 +65,35 @@ function findProductById(products, id) {
   return (products || []).find((item) => item.id === id) || null;
 }
 
+
+const API_BASE = "http://127.0.0.1:5000/api";
+
+async function apiFetch(path, options = {}) {
+  let response;
+  try {
+    response = await fetch(`${API_BASE}${path}`, {
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      ...options,
+    });
+  } catch (error) {
+    throw new Error("Không kết nối được máy chủ. Hãy kiểm tra backend đã chạy chưa.");
+  }
+
+  let payload = null;
+  try {
+    payload = await response.json();
+  } catch (error) {
+    payload = null;
+  }
+
+  if (!response.ok || !payload || payload.success === false) {
+    throw new Error((payload && payload.message) || "Có lỗi xảy ra, vui lòng thử lại.");
+  }
+  return payload.data;
+}
+
+
 window.Aqualife = {
   getCart,
   saveCart,
@@ -74,6 +103,7 @@ window.Aqualife = {
   formatCurrency,
   findProductById,
   updateCartBadges,
+  apiFetch,
 };
 
 document.addEventListener("DOMContentLoaded", () => {
