@@ -65,6 +65,76 @@ function findProductById(products, id) {
   return (products || []).find((item) => item.id === id) || null;
 }
 
+
+const API_BASE = "http://127.0.0.1:5000/api";
+
+async function apiFetch(path, options = {}) {
+  let response;
+  try {
+    response = await fetch(`${API_BASE}${path}`, {
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      ...options,
+    });
+  } catch (error) {
+    throw new Error("Không kết nối được máy chủ. Hãy kiểm tra backend đã chạy chưa.");
+  }
+
+  let payload = null;
+  try {
+    payload = await response.json();
+  } catch (error) {
+    payload = null;
+  }
+
+  if (!response.ok || !payload || payload.success === false) {
+    throw new Error((payload && payload.message) || "Có lỗi xảy ra, vui lòng thử lại.");
+  }
+  return payload.data;
+}
+
+
+async function renderAuthNav() {
+  const authLink = document.querySelector("a.cart-link:not(.cart-link--cart)");
+  if (!authLink) return;
+
+  let user = null;
+  try {
+    user = await apiFetch("/auth/me");
+  } catch (error) {
+    user = null;
+  }
+
+  if (!user) {
+    localStorage.removeItem("aqualife_user");
+    return;
+  }
+  localStorage.setItem("aqualife_user", user.email);
+
+  if (authLink.firstChild) {
+    authLink.firstChild.textContent = `Xin chào, ${user.name} `;
+  }
+  authLink.href = "#";
+  authLink.addEventListener("click", (event) => event.preventDefault());
+
+  const logoutLink = document.createElement("a");
+  logoutLink.className = "cart-link";
+  logoutLink.href = "#";
+  logoutLink.textContent = "Đăng xuất";
+  logoutLink.addEventListener("click", async (event) => {
+    event.preventDefault();
+    try {
+      await apiFetch("/auth/logout", { method: "POST" });
+    } catch (error) {
+      // vẫn cho người dùng thoát về trang chủ
+    }
+    localStorage.removeItem("aqualife_user");
+    window.location.href = "home.html";
+  });
+  authLink.after(logoutLink);
+}
+
+
 window.Aqualife = {
   getCart,
   saveCart,
@@ -74,10 +144,12 @@ window.Aqualife = {
   formatCurrency,
   findProductById,
   updateCartBadges,
+  apiFetch,
 };
 
 document.addEventListener("DOMContentLoaded", () => {
   updateCartBadges();
+  renderAuthNav();
 
   // Hiệu ứng giọt nước khi click
   document.addEventListener("click", (e) => {
@@ -85,7 +157,6 @@ document.addEventListener("DOMContentLoaded", () => {
       createDroplet(e.clientX, e.clientY);
     }
   });
-
 });
 
 function createDroplet(x, y) {

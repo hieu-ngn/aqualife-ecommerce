@@ -3,7 +3,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const result = document.getElementById("register-result");
   if (!form || !result) return;
 
-  form.addEventListener("submit", (event) => {
+  function showMessage(type, text) {
+    result.className = `alert alert-${type}`;
+    result.textContent = text;
+    result.classList.remove("hidden");
+  }
+
+  form.addEventListener("submit", async (event) => {
     event.preventDefault();
 
     const name = String(form.elements.namedItem("name")?.value || "").trim();
@@ -12,29 +18,41 @@ document.addEventListener("DOMContentLoaded", () => {
     const confirm = String(form.elements.namedItem("confirm")?.value || "");
 
     if (!name || !email || !password || !confirm) {
-      result.className = "alert alert-error";
-      result.textContent = "Vui lòng nhập đầy đủ thông tin.";
-      result.classList.remove("hidden");
+      showMessage("error", "Vui lòng nhập đầy đủ thông tin.");
       return;
     }
 
     if (password.length < 6) {
-      result.className = "alert alert-error";
-      result.textContent = "Mật khẩu cần ít nhất 6 ký tự.";
-      result.classList.remove("hidden");
+      showMessage("error", "Mật khẩu cần ít nhất 6 ký tự.");
       return;
     }
 
     if (password !== confirm) {
-      result.className = "alert alert-error";
-      result.textContent = "Xác nhận mật khẩu không khớp.";
-      result.classList.remove("hidden");
+      showMessage("error", "Xác nhận mật khẩu không khớp.");
       return;
     }
 
-    result.className = "alert alert-success";
-    result.textContent = "Đăng ký thành công. Bạn có thể đăng nhập ngay.";
-    result.classList.remove("hidden");
-    form.reset();
+    const button = form.querySelector('button[type="submit"]');
+    if (button) button.disabled = true;
+
+    try {
+      await window.Aqualife.apiFetch("/auth/register", {
+        method: "POST",
+        body: JSON.stringify({
+          name,
+          email,
+          password,
+          confirm_password: confirm,
+        }),
+      });
+      form.reset();
+      showMessage("success", "Đăng ký thành công! Chuyển đến trang đăng nhập...");
+      setTimeout(() => {
+        window.location.href = "auth.html";
+      }, 1000);
+    } catch (error) {
+      showMessage("error", error.message);
+      if (button) button.disabled = false;
+    }
   });
 });
