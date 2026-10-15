@@ -94,6 +94,47 @@ async function apiFetch(path, options = {}) {
 }
 
 
+async function renderAuthNav() {
+  const authLink = document.querySelector("a.cart-link:not(.cart-link--cart)");
+  if (!authLink) return;
+
+  let user = null;
+  try {
+    user = await apiFetch("/auth/me");
+  } catch (error) {
+    user = null;
+  }
+
+  if (!user) {
+    localStorage.removeItem("aqualife_user");
+    return;
+  }
+  localStorage.setItem("aqualife_user", user.email);
+
+  if (authLink.firstChild) {
+    authLink.firstChild.textContent = `Xin chào, ${user.name} `;
+  }
+  authLink.href = "#";
+  authLink.addEventListener("click", (event) => event.preventDefault());
+
+  const logoutLink = document.createElement("a");
+  logoutLink.className = "cart-link";
+  logoutLink.href = "#";
+  logoutLink.textContent = "Đăng xuất";
+  logoutLink.addEventListener("click", async (event) => {
+    event.preventDefault();
+    try {
+      await apiFetch("/auth/logout", { method: "POST" });
+    } catch (error) {
+      // vẫn cho người dùng thoát về trang chủ
+    }
+    localStorage.removeItem("aqualife_user");
+    window.location.href = "home.html";
+  });
+  authLink.after(logoutLink);
+}
+
+
 window.Aqualife = {
   getCart,
   saveCart,
@@ -108,6 +149,7 @@ window.Aqualife = {
 
 document.addEventListener("DOMContentLoaded", () => {
   updateCartBadges();
+  renderAuthNav();
 
   // Hiệu ứng giọt nước khi click
   document.addEventListener("click", (e) => {
@@ -115,7 +157,6 @@ document.addEventListener("DOMContentLoaded", () => {
       createDroplet(e.clientX, e.clientY);
     }
   });
-
 });
 
 function createDroplet(x, y) {
