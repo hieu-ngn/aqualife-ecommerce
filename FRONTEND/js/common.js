@@ -74,7 +74,7 @@ function findProductById(products, id) {
 }
 
 const API_BASE =
-  window.location.port === "5000"
+  window.location.protocol.startsWith("http") && window.location.port !== "5500"
     ? `${window.location.origin}/api`
     : "http://127.0.0.1:5000/api";
 
