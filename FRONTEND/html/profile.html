@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="../image/icon.img/logo_web.png" type="image/png" />
+  <title>Hồ sơ cá nhân - Aqualife</title>
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script defer src="../js/common.js"></script>
+  <script defer src="../js/profile.js"></script>
+  <style>
+    .profile-banner {
+      background: linear-gradient(135deg, #08537f 0%, #0b6aa2 60%, #1686c4 100%);
+      color: #ffffff;
+      border-radius: 16px;
+      padding: 24px 28px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .profile-banner-info {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .profile-avatar {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.2);
+      border: 2px solid rgba(255, 255, 255, 0.55);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      font-weight: 800;
+    }
+    .profile-banner h1 {
+      margin: 0 0 6px;
+      font-size: 24px;
+    }
+    .profile-meta {
+      margin: 0;
+      opacity: 0.9;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .role-pill {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.22);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .profile-grid {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 20px;
+      align-items: start;
+    }
+    .profile-card h2 {
+      margin-top: 0;
+      margin-bottom: 16px;
+      color: var(--primary-dark);
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .profile-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .profile-actions .btn {
+      width: auto;
+      padding: 10px 18px;
+    }
+    @media (max-width: 860px) {
+      .profile-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-row">
+      <a class="brand" href="home.html">Aqualife</a>
+      <nav class="main-nav">
+        <a href="home.html">Trang chủ</a>
+        <a href="about.html">Về chúng tôi</a>
+        <a href="products.html">Sản phẩm</a>
+        <a href="contact.html">Liên hệ</a>
+      </nav>
+      <nav>
+        <a class="cart-link" href="auth.html">Đăng nhập <img src="../image/icon.img/auth.png" alt="Đăng nhập" class="nav-icon"></a>
+        <a class="cart-link cart-link--cart" href="cart.html">Giỏ hàng <img src="../image/icon.img/cart.png" alt="Giỏ hàng" class="nav-icon"> <span class="badge" data-cart-count>0</span></a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page">
+    <div class="container">
+      <section class="profile-banner">
+        <div class="profile-banner-info">
+          <div class="profile-avatar" id="profile-avatar">A</div>
+          <div>
+            <h1 id="profile-display-name">Đang tải hồ sơ...</h1>
+            <p class="profile-meta">
+              <span id="profile-display-email">---</span>
+              <span class="role-pill" id="profile-display-role">Khách hàng</span>
+            </p>
+          </div>
+        </div>
+        <div class="profile-actions">
+          <a href="orders.html" class="btn btn-ghost"><i class="fa-solid fa-box-open"></i> Đơn hàng của tôi</a>
+          <a href="admin.html" id="profile-admin-btn" class="btn btn-ghost hidden"><i class="fa-solid fa-gauge-high"></i> Bảng quản trị</a>
+        </div>
+      </section>
+
+      <div class="profile-grid">
+        <section class="card profile-card">
+          <h2><i class="fa-regular fa-id-card"></i> Thông tin cá nhân & Địa chỉ giao hàng</h2>
+          <form id="profile-form" novalidate>
+            <div class="field-group">
+              <label for="profile-email"><strong>Email đăng nhập</strong> (không thể thay đổi)</label>
+              <input id="profile-email" class="input" type="email" disabled />
+            </div>
+
+            <div class="field-grid">
+              <div class="field-group">
+                <label for="profile-name"><strong>Họ và tên *</strong></label>
+                <input id="profile-name" name="name" class="input" type="text" required placeholder="Nhập họ tên của bạn" />
+              </div>
+              <div class="field-group">
+                <label for="profile-phone"><strong>Số điện thoại</strong></label>
+                <input id="profile-phone" name="phone" class="input" type="tel" placeholder="VD: 0912345678" />
+              </div>
+            </div>
+
+            <div class="field-group">
+              <label for="profile-address"><strong>Địa chỉ nhận hàng mặc định</strong></label>
+              <textarea id="profile-address" name="address" class="textarea" rows="3" placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành phố"></textarea>
+            </div>
+
+            <button type="submit" id="profile-save-btn" class="btn btn-primary">Lưu thay đổi hồ sơ</button>
+            <div id="profile-alert" class="alert hidden"></div>
+          </form>
+        </section>
+
+        <section class="card profile-card">
+          <h2><i class="fa-solid fa-shield-halved"></i> Đổi mật khẩu bảo mật</h2>
+          <form id="password-form" novalidate>
+            <div class="field-group">
+              <label for="current-password"><strong>Mật khẩu hiện tại *</strong></label>
+              <input id="current-password" name="current_password" class="input" type="password" required placeholder="Nhập mật khẩu hiện tại" />
+            </div>
+
+            <div class="field-group">
+              <label for="new-password"><strong>Mật khẩu mới *</strong> (tối thiểu 6 ký tự)</label>
+              <input id="new-password" name="new_password" class="input" type="password" required minlength="6" placeholder="Nhập mật khẩu mới" />
+            </div>
+
+            <div class="field-group">
+              <label for="confirm-password"><strong>Xác nhận mật khẩu mới *</strong></label>
+              <input id="confirm-password" name="confirm_password" class="input" type="password" required minlength="6" placeholder="Nhập lại mật khẩu mới" />
+            </div>
+
+            <button type="submit" id="password-save-btn" class="btn btn-primary">Cập nhật mật khẩu</button>
+            <div id="password-alert" class="alert hidden"></div>
+          </form>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer footer-lite">
+    <div class="footer-container">
+      <div class="footer-col">
+        <h3>Aqualife</h3>
+        <p>Mang cả hệ sinh thái biển vào không gian sống của bạn với dịch vụ và sản phẩm cao cấp.</p>
+      </div>
+      <div class="footer-col">
+        <h4>LIÊN KẾT NHANH</h4>
+        <a href="home.html">Trang chủ</a>
+        <a href="products.html">Sản phẩm</a>
+        <a href="orders.html">Lịch sử đơn hàng</a>
+        <a href="contact.html">Liên hệ</a>
+      </div>
+      <div class="footer-col trust-col">
+        <h4>HỖ TRỢ KHÁCH HÀNG</h4>
+        <p>Hotline: 086 781 7946</p>
+        <p>Email: info@aqualife.com</p>
+      </div>
+    </div>
+    <div class="footer-bottom">© 2026 Aqualife | The Ocean Curator</div>
+  </footer>
+</body>
+</html>

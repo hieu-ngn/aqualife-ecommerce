@@ -29,10 +29,25 @@ document.addEventListener("DOMContentLoaded", () => {
         body: JSON.stringify({ email, password }),
       });
       localStorage.setItem("aqualife_user", user.email);
-      showMessage("success", "Đăng nhập thành công! Chuyển hướng đến trang chủ...");
+      localStorage.setItem("aqualife_user_info", JSON.stringify(user));
+
+      if (window.Aqualife.syncCartWithServer) {
+        await window.Aqualife.syncCartWithServer();
+      }
+
+      const params = new URLSearchParams(window.location.search);
+      const defaultTarget = user.role === "admin" ? "admin.html" : "home.html";
+      const redirectTarget = params.get("redirect") || defaultTarget;
+
+      showMessage(
+        "success",
+        user.role === "admin"
+          ? "Đăng nhập Quản trị viên thành công! Đang mở Aqualife Admin..."
+          : "Đăng nhập thành công! Đang chuyển hướng..."
+      );
       setTimeout(() => {
-        window.location.href = "home.html";
-      }, 700);
+        window.location.href = redirectTarget;
+      }, 600);
     } catch (error) {
       showMessage("error", error.message);
       if (button) button.disabled = false;

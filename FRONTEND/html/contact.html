@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="icon" href="../image/icon.img/logo_web.png" type="image/png" />
-  <title>Liên hệ - Aqualife</title>
+  <title>Liên hệ & Hỗ trợ - Aqualife</title>
   <link rel="stylesheet" href="../css/base.css" />
   <link rel="stylesheet" href="../css/contact.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -28,29 +28,316 @@
     </div>
   </header>
 
-  <main class="page">
+  <!-- HERO BANNER -->
+  <section class="contact-hero">
+    <video class="contact-hero-video" autoplay muted loop playsinline>
+      <source src="../video/backgroundVideo.mp4" type="video/mp4">
+      Trình duyệt của bạn không hỗ trợ video.
+    </video>
+    <div class="contact-hero-overlay"></div>
+    <div class="container contact-hero-content">
+      <span class="contact-tag">KẾT NỐI VỚI CHUYÊN GIA THỦY SINH</span>
+      <h1>Liên Hệ & Hỗ Trợ <span>Aqualife</span></h1>
+      <p>
+        Đội ngũ kỹ thuật viên và chuyên gia của chúng tôi luôn sẵn sàng tư vấn thiết kế bể,
+        hướng dẫn chăm sóc sinh vật biển – nước ngọt và hỗ trợ đơn hàng 24/7.
+      </p>
+    </div>
+  </section>
+
+  <main class="page contact-page">
     <div class="container">
-      <h1>Liên hệ Aqualife</h1>
+      <!-- 4 THẺ THÔNG TIN NHANH -->
+      <section class="contact-highlights">
+        <article class="highlight-card">
+          <div class="highlight-icon icon-blue">
+            <i class="fa-solid fa-location-dot"></i>
+          </div>
+          <h3>Showroom & Studio</h3>
+          <p>207 Đ. Giải Phóng, Đồng Tâm, Hai Bà Trưng, Hà Nội</p>
+          <span class="highlight-sub">Trường ĐH Kinh tế Quốc dân (NEU)</span>
+        </article>
+
+        <article class="highlight-card">
+          <div class="highlight-icon icon-teal">
+            <i class="fa-solid fa-phone-volume"></i>
+          </div>
+          <h3>Hotline & Zalo 24/7</h3>
+          <p><a href="tel:0867817946">086 781 7946</a></p>
+          <span class="highlight-sub">Hỗ trợ khẩn cấp & tư vấn kỹ thuật</span>
+        </article>
+
+        <article class="highlight-card">
+          <div class="highlight-icon icon-purple">
+            <i class="fa-solid fa-envelope-open-text"></i>
+          </div>
+          <h3>Hộp thư Điện tử</h3>
+          <p><a href="mailto:info@aqualife.com">info@aqualife.com</a></p>
+          <span class="highlight-sub">Phản hồi nhanh trong vòng 2 giờ</span>
+        </article>
+
+        <article class="highlight-card">
+          <div class="highlight-icon icon-amber">
+            <i class="fa-solid fa-clock"></i>
+          </div>
+          <h3>Giờ Mở Cửa</h3>
+          <p>08:00 – 23:59 (T2 – CN)</p>
+          <span class="highlight-sub">Hoạt động xuyên lễ & cuối tuần</span>
+        </article>
+      </section>
+
+      <!-- KHU VỰC FORM LIÊN HỆ & BẢN ĐỒ -->
       <div class="contact-grid">
-        <section class="card">
-          <form id="contact-form">
-            <div class="grid" style="gap:10px;">
-              <input class="input" type="text" name="name" placeholder="Họ và tên" />
-              <input class="input" type="email" name="email" placeholder="Email" />
-              <textarea class="textarea" name="message" placeholder="Nội dung liên hệ" cols="30" rows="10"></textarea>
-              <button class="btn btn-primary" type="submit">Gửi liên hệ</button>
+        <section class="card contact-form-card">
+          <div class="card-header">
+            <h2>Gửi yêu cầu tư vấn & hỗ trợ</h2>
+            <p class="muted">
+              Điền thông tin bên dưới, chuyên viên Aqualife sẽ liên hệ lại với bạn trong thời gian sớm nhất.
+            </p>
+          </div>
+
+          <form id="contact-form" novalidate>
+            <div class="form-row-2">
+              <div class="field-group">
+                <label for="contact-name">Họ và tên <span class="req">*</span></label>
+                <input id="contact-name" class="input" type="text" name="name" placeholder="Nhập họ và tên của bạn" required />
+              </div>
+
+              <div class="field-group">
+                <label for="contact-phone">Số điện thoại <span class="req">*</span></label>
+                <input id="contact-phone" class="input" type="tel" name="phone" placeholder="Ví dụ: 0912 345 678" required />
+              </div>
             </div>
+
+            <div class="form-row-2">
+              <div class="field-group">
+                <label for="contact-email">Email liên hệ <span class="req">*</span></label>
+                <input id="contact-email" class="input" type="email" name="email" placeholder="example@email.com" required />
+              </div>
+
+              <div class="field-group">
+                <label for="contact-order">Mã đơn hàng (nếu có)</label>
+                <input id="contact-order" class="input" type="text" name="order_code" placeholder="Ví dụ: #102 (không bắt buộc)" />
+              </div>
+            </div>
+
+            <div class="field-group">
+              <label for="contact-subject">Chủ đề cần hỗ trợ <span class="req">*</span></label>
+              <select id="contact-subject" class="select" name="subject" required>
+                <option value="Tư vấn chọn cá & thiết kế bể thủy sinh">🐠 Tư vấn chọn cá & thiết kế bể thủy sinh</option>
+                <option value="Hỗ trợ đơn hàng & vận chuyển">🚚 Hỗ trợ đơn hàng & tình trạng vận chuyển</option>
+                <option value="Bảo hành sinh vật sống (DOA) & Đổi trả">🛡️ Bảo hành sinh vật sống (DOA) & Đổi trả</option>
+                <option value="Tư vấn xử lý nước & bệnh cá cảnh">💧 Tư vấn xử lý môi trường nước & bệnh cá</option>
+                <option value="Hợp tác kinh doanh / Đơn hàng sỉ">🤝 Hợp tác kinh doanh / Đơn hàng sỉ</option>
+                <option value="Góp ý dịch vụ & Khác">💬 Góp ý dịch vụ & Khác</option>
+              </select>
+            </div>
+
+            <div class="field-group">
+              <div class="label-row">
+                <label for="contact-message">Nội dung chi tiết <span class="req">*</span></label>
+                <span id="char-count" class="char-count">0 / 500 ký tự</span>
+              </div>
+              <textarea
+                id="contact-message"
+                class="textarea"
+                name="message"
+                rows="6"
+                maxlength="500"
+                placeholder="Mô tả chi tiết câu hỏi, kích thước bể hiện tại hoặc vấn đề bạn đang gặp phải..."
+                required
+              ></textarea>
+            </div>
+
+            <button id="contact-submit" class="btn btn-primary contact-submit-btn" type="submit">
+              <i class="fa-solid fa-paper-plane"></i> Gửi liên hệ ngay
+            </button>
           </form>
+
           <div id="contact-result" class="alert hidden"></div>
+
+          <!-- LỊCH SỬ YÊU CẦU GẦN ĐÂY TRÊN TRÌNH DUYỆT -->
+          <div id="recent-contacts-box" class="recent-contacts hidden">
+            <h4><i class="fa-solid fa-clock-rotate-left"></i> Yêu cầu bạn đã gửi gần đây</h4>
+            <ul id="recent-contacts-list"></ul>
+          </div>
         </section>
 
-        <aside class="card contact-meta">
-          <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d29798.511507000305!2d105.80645031083982!3d21.000094200000003!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3135ac71752d8f79%3A0xd2ec575c01017afa!2zVHLGsOG7nW5nIMSQ4bqhaSBI4buNYyBLaW5oIFThur8gUXXhu5FjIETDom4gKE5FVSk!5e0!3m2!1svi!2s!4v1775115133473!5m2!1svi!2s" width="100%" height="200" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>         
-          <div class="line"><strong>Điện thoại:</strong> 086 781 7946</div>
-          <div class="line"><strong>Email:</strong> info@aqualife.com</div>
-          <div class="line"><strong>Giờ làm việc:</strong> 8:00 - 23:59 (T2 - CN)</div>
+        <!-- CỘT PHẢI: BẢN ĐỒ & CAM KẾT DỊCH VỤ -->
+        <aside class="contact-sidebar">
+          <div class="card contact-map-card">
+            <div class="map-wrapper">
+              <iframe
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d29798.511507000305!2d105.80645031083982!3d21.000094200000003!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3135ac71752d8f79%3A0xd2ec575c01017afa!2zVHLGsOG7nW5nIMSQ4bqhaSBI4buNYyBLaW5oIFThur8gUXXhu5FjIETDom4gKE5FVSk!5e0!3m2!1svi!2s!4v1775115133473!5m2!1svi!2s"
+                width="100%"
+                height="260"
+                style="border:0;"
+                allowfullscreen=""
+                loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade"
+                title="Bản đồ Aqualife Showroom"
+              ></iframe>
+            </div>
+            <div class="map-info">
+              <h3>Aqualife Flagship Studio</h3>
+              <p class="muted">207 Đ. Giải Phóng, Phường Đồng Tâm, Quận Hai Bà Trưng, Hà Nội</p>
+              <a
+                class="btn btn-ghost map-btn"
+                href="https://maps.google.com/?q=Trường+Đại+Học+Kinh+Tế+Quốc+Dân+207+Giải+Phóng+Hà+Nội"
+                target="_blank"
+                rel="noreferrer"
+              >
+                <i class="fa-solid fa-diamond-turn-right"></i> Mở chỉ đường trên Google Maps
+              </a>
+            </div>
+          </div>
+
+          <div class="card service-pledge-card">
+            <h3>Cam kết Hỗ trợ từ Aqualife</h3>
+            <ul class="pledge-list">
+              <li>
+                <span class="pledge-badge"><i class="fa-solid fa-shield-heart"></i></span>
+                <div>
+                  <strong>Bảo hành sống khỏe 100% (DOA)</strong>
+                  <p>Hoàn tiền hoặc bù mới 100% nếu sinh vật gặp rủi ro trong quá trình vận chuyển.</p>
+                </div>
+              </li>
+              <li>
+                <span class="pledge-badge"><i class="fa-solid fa-truck-fast"></i></span>
+                <div>
+                  <strong>Đóng gói Oxy & Cách nhiệt chuyên dụng</strong>
+                  <p>Túi thở chuyên dụng, thùng xốp giữ nhiệt và sưởi/đá gel theo thời tiết từng vùng.</p>
+                </div>
+              </li>
+              <li>
+                <span class="pledge-badge"><i class="fa-solid fa-user-doctor"></i></span>
+                <div>
+                  <strong>Đồng hành kỹ thuật trọn đời</strong>
+                  <p>Tư vấn miễn phí thông số nước (pH, TDS, nhiệt độ) và cách thả cá an toàn.</p>
+                </div>
+              </li>
+            </ul>
+
+            <div class="contact-social-box">
+              <span>Kết nối trực tiếp qua mạng xã hội:</span>
+              <div class="contact-social-links">
+                <a href="https://www.facebook.com/Cacanhthienduc/" target="_blank" rel="noreferrer" class="social-pill fb">
+                  <i class="fa-brands fa-facebook-f"></i> Facebook
+                </a>
+                <a href="https://www.instagram.com/cristiano/" target="_blank" rel="noreferrer" class="social-pill ig">
+                  <i class="fa-brands fa-instagram"></i> Instagram
+                </a>
+                <a href="https://www.youtube.com/@traicacanhthienuc8674" target="_blank" rel="noreferrer" class="social-pill yt">
+                  <i class="fa-brands fa-youtube"></i> YouTube
+                </a>
+              </div>
+            </div>
+          </div>
         </aside>
       </div>
+
+      <!-- CHÍNH SÁCH VẬN CHUYỂN, ĐỔI TRẢ & BẢO MẬT -->
+      <section class="policies-section" id="policies">
+        <div class="section-head">
+          <span class="section-tag">CHÍNH SÁCH KHÁCH HÀNG</span>
+          <h2>Vận Chuyển, Đổi Trả & Bảo Mật Thông Tin</h2>
+          <p class="muted">Quy chuẩn vận hành minh bạch nhằm bảo vệ quyền lợi tối đa cho người chơi thủy sinh</p>
+        </div>
+
+        <div class="policies-grid">
+          <article class="card policy-card">
+            <div class="policy-icon"><i class="fa-solid fa-box-open"></i></div>
+            <h3>1. Chính sách Vận chuyển Sinh vật sống</h3>
+            <p>
+              Nội thành Hà Nội giao hỏa tốc trong <strong>2 – 4 giờ</strong>. Các tỉnh thành khác vận chuyển qua xe khách
+              hoặc đường hàng không trong <strong>24 – 48 giờ</strong> với quy cách đóng gói chuẩn xuất khẩu.
+            </p>
+          </article>
+
+          <article class="card policy-card">
+            <div class="policy-icon"><i class="fa-solid fa-rotate"></i></div>
+            <h3>2. Chính sách Bảo hành & Đổi trả (DOA)</h3>
+            <p>
+              Quý khách vui lòng quay video mở thùng hàng (unbox) còn nguyên niêm phong trong vòng <strong>2 giờ</strong> kể từ
+              khi nhận hàng. Aqualife hoàn tiền 100% hoặc gửi bù miễn phí nếu có hao hụt.
+            </p>
+          </article>
+
+          <article class="card policy-card">
+            <div class="policy-icon"><i class="fa-solid fa-lock"></i></div>
+            <h3>3. Chính sách Bảo mật Thông tin</h3>
+            <p>
+              Mọi thông tin cá nhân, số điện thoại và lịch sử đơn hàng của quý khách được mã hóa và bảo mật tuyệt đối,
+              chỉ sử dụng cho mục đích giao nhận và chăm sóc khách hàng của Aqualife.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <!-- CÂU HỎI THƯỜNG GẶP (FAQ ACCORDION) -->
+      <section class="faq-section">
+        <div class="section-head">
+          <span class="section-tag">GIẢI ĐÁP NHANH</span>
+          <h2>Câu Hỏi Thường Gặp (FAQ)</h2>
+        </div>
+
+        <div class="faq-list" id="faq-list">
+          <div class="faq-item active">
+            <button class="faq-question" type="button">
+              <span>1. Khi mới nhận cá/tép về, tôi cần thả vào bể như thế nào để không bị sốc nước?</span>
+              <i class="fa-solid fa-chevron-down"></i>
+            </button>
+            <div class="faq-answer">
+              <p>
+                Bạn nên ngâm nguyên túi cá chưa mở vào bể từ <strong>15 – 20 phút</strong> để cân bằng nhiệt độ. Sau đó,
+                mở túi và châm thêm từ từ nước trong bể vào túi (mỗi 5 phút thêm khoảng 20% lượng nước) trong vòng
+                20 – 30 phút để cá/tép quen dần độ pH và TDS trước khi vợt nhẹ cá thả vào bể.
+              </p>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-question" type="button">
+              <span>2. Aqualife có nhận giao cá cảnh, san hô đi các tỉnh xa không?</span>
+              <i class="fa-solid fa-chevron-down"></i>
+            </button>
+            <div class="faq-answer">
+              <p>
+                Có! Aqualife vận chuyển toàn quốc bằng túi thở chuyên dụng bơm oxy tinh khiết, đóng thùng xốp dày kèm
+                đá gel hoặc túi sưởi tùy nhiệt độ vùng miền, đảm bảo cá khỏe mạnh suốt 48 – 72 giờ vận chuyển.
+              </p>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-question" type="button">
+              <span>3. Làm thế nào để tôi kiểm tra trạng thái hoặc hủy đơn hàng đã đặt?</span>
+              <i class="fa-solid fa-chevron-down"></i>
+            </button>
+            <div class="faq-answer">
+              <p>
+                Sau khi đăng nhập, bạn nhấn vào mục <strong>"Đơn hàng"</strong> trên thanh menu góc phải. Tại đó bạn có thể
+                xem chi tiết từng đơn hàng và nhấn <strong>"Hủy đơn hàng"</strong> nếu đơn đang ở trạng thái <em>Chờ xác nhận</em>
+                hoặc <em>Đã xác nhận</em>.
+              </p>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-question" type="button">
+              <span>4. Tôi muốn đặt thiết kế bể thủy sinh / bể cá biển trọn gói tại nhà thì liên hệ thế nào?</span>
+              <i class="fa-solid fa-chevron-down"></i>
+            </button>
+            <div class="faq-answer">
+              <p>
+                Bạn chỉ cần chọn chủ đề <strong>"Tư vấn chọn cá & thiết kế bể thủy sinh"</strong> ở biểu mẫu trên hoặc gọi
+                trực tiếp Hotline <strong>086 781 7946</strong>. Kỹ thuật viên của Aqualife sẽ khảo sát kích thước không gian
+                và lên bản vẽ báo giá chi tiết miễn phí cho bạn.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   </main>
 
@@ -80,7 +367,7 @@
       <div class="footer-col">
         <h4>LIÊN KẾT NHANH</h4>
         <a href="about.html">Về chúng tôi</a>
-        <a href="contact.html">Chính sách vận chuyển</a>
+        <a href="#policies">Chính sách vận chuyển</a>
         <a href="products.html">Hướng dẫn mua hàng</a>
         <a href="about.html">Điều khoản & điều kiện</a>
       </div>
@@ -88,8 +375,8 @@
         <h4>NEWSLETTER</h4>
         <p>Đăng ký để nhận tin tức và ưu đãi</p>
         <div class="newsletter">
-          <input type="email" placeholder="Email của bạn">
-          <button type="button">Đăng ký</button>
+          <input id="newsletter-email" type="email" placeholder="Email của bạn">
+          <button id="newsletter-btn" type="button">Đăng ký</button>
         </div>
       </div>
     </div>

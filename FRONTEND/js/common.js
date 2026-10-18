@@ -1,6 +1,32 @@
 const AQUALIFE_CART_KEY = "aqualife_cart_v1";
 let productsCache = null;
 
+const CATEGORY_TO_SPECIES = {
+  "Cá cảnh": "Cá",
+  "Tép cảnh": "Tép",
+  "Ốc cảnh": "Ốc",
+  "Thủy sinh & San hô": "Thủy Sinh / San hô",
+};
+
+function showToast(message, type = "success") {
+  let container = document.querySelector(".toast-container");
+  if (!container) {
+    container = document.createElement("div");
+    container.className = "toast-container";
+    document.body.appendChild(container);
+  }
+  const toast = document.createElement("div");
+  toast.className = `aqualife-toast aqualife-toast--${type}`;
+  toast.textContent = message;
+  container.appendChild(toast);
+
+  setTimeout(() => {
+    toast.style.opacity = "0";
+    toast.style.transition = "opacity 0.25s ease";
+    setTimeout(() => toast.remove(), 260);
+  }, 2600);
+}
+
 function getCart() {
   try {
     const raw = localStorage.getItem(AQUALIFE_CART_KEY);
@@ -29,44 +55,28 @@ function updateCartBadges() {
   });
 }
 
-function addToCart(productId, quantity = 1) {
-  const qty = Number(quantity || 1);
-  if (!productId || Number.isNaN(qty) || qty <= 0) return;
-  const cart = getCart();
-  cart[productId] = Number(cart[productId] || 0) + qty;
-  saveCart(cart);
-}
-
-function removeFromCart(productId) {
-  const cart = getCart();
-  delete cart[productId];
-  saveCart(cart);
-}
-
-async function loadProducts() {
-  if (productsCache) return productsCache;
-  const response = await fetch("../json/products.json");
-  if (!response.ok) {
-    throw new Error("Khong the tai du lieu san pham");
+function normalizeImagePath(img) {
+  if (!img) return "../image/ocean-bg.svg";
+  if (img.startsWith("../") || img.startsWith("http") || img.startsWith("/")) {
+    return img.startsWith("/image/") ? `..${img}` : img;
   }
-  productsCache = await response.json();
-  return productsCache;
-}
-
-function formatCurrency(value) {
-  return new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency: "VND",
-    maximumFractionDigits: 0,
-  }).format(value || 0);
+  return `../${img}`;
 }
 
 function findProductById(products, id) {
-  return (products || []).find((item) => item.id === id) || null;
+  if (id === undefined || id === null) return null;
+  const target = String(id);
+  return (
+    (products || []).find(
+      (item) => String(item.id) === target || (item.slug && item.slug === target)
+    ) || null
+  );
 }
 
-
-const API_BASE = "http://127.0.0.1:5000/api";
+const API_BASE =
+  window.location.port === "5000"
+    ? `${window.location.origin}/api`
+    : "http://127.0.0.1:5000/api";
 
 async function apiFetch(path, options = {}) {
   let response;
@@ -93,6 +103,233 @@ async function apiFetch(path, options = {}) {
   return payload.data;
 }
 
+async function loadProducts(forceRefresh = false) {
+  if (productsCache && !forceRefresh) return productsCache;
+
+  let jsonMetaList = [];
+  try {
+    const metaRes = await fetch("../json/products.json");
+    if (metaRes.ok) {
+      jsonMetaList = await metaRes.json();
+    }
+  } catch {
+    jsonMetaList = [];
+  }
+
+  const metaByName = new Map();
+  jsonMetaList.forEach((item) => {
+    if (item && item.name) {
+      metaByName.set(item.name.trim().toLowerCase(), item);
+    }
+  });
+
+  try {
+    const dbProducts = await apiFetch("/products");
+    if (Array.isArray(dbProducts) && dbProducts.length > 0) {
+      productsCache = dbProducts.map((dbItem) => {
+        const meta = metaByName.get((dbItem.name || "").trim().toLowerCase()) || {};
+        const species =
+          meta.species ||
+          CATEGORY_TO_SPECIES[dbItem.category_name] ||
+          dbItem.category_name ||
+          "Cá";
+        const waterType =
+          dbItem.water_type || dbItem.waterType || meta.waterType || "Nước ngọt";
+        const desc = dbItem.description || meta.description || "";
+        const shortDescription =
+          meta.shortDescription ||
+          (desc.length > 70 ? `${desc.slice(0, 67)}...` : desc);
+
+        return {
+          id: String(dbItem.id),
+          dbId: Number(dbItem.id),
+          slug: meta.id || String(dbItem.id),
+          name: dbItem.name,
+          category_id: dbItem.category_id,
+          category_name: dbItem.category_name,
+          species,
+          waterType,
+          price: Number(dbItem.price || 0),
+          stock: Number(dbItem.stock ?? 0),
+          status: dbItem.status || "active",
+          image: normalizeImagePath(dbItem.image || meta.image),
+          shortDescription,
+          description: desc,
+        };
+      });
+      return productsCache;
+    }
+  } catch {
+    // Fallback sang json tĩnh nếu chưa bật server
+  }
+
+  if (!jsonMetaList.length) {
+    throw new Error("Không thể tải dữ liệu sản phẩm");
+  }
+
+  productsCache = jsonMetaList.map((item, idx) => ({
+    ...item,
+    id: String(item.id),
+    dbId: idx + 1,
+    slug: String(item.id),
+    stock: Number(item.stock ?? 20),
+    status: "active",
+    image: normalizeImagePath(item.image),
+  }));
+  return productsCache;
+}
+
+function addToCart(productId, quantity = 1) {
+  const qty = Number(quantity || 1);
+  if (!productId || Number.isNaN(qty) || qty <= 0) return false;
+
+  const product = productsCache ? findProductById(productsCache, productId) : null;
+  const canonicalId = product ? String(product.id) : String(productId);
+  const cart = getCart();
+  const currentQty = Number(cart[canonicalId] || 0);
+
+  if (product && typeof product.stock === "number") {
+    if (product.stock <= 0) {
+      showToast(`Sản phẩm "${product.name}" hiện đã hết hàng.`, "error");
+      return false;
+    }
+    if (currentQty + qty > product.stock) {
+      showToast(
+        `Sản phẩm "${product.name}" chỉ còn ${product.stock} sản phẩm trong kho.`,
+        "error"
+      );
+      return false;
+    }
+  }
+
+  cart[canonicalId] = currentQty + qty;
+  saveCart(cart);
+  showToast(
+    product
+      ? `Đã thêm ${qty} "${product.name}" vào giỏ hàng!`
+      : "Đã thêm sản phẩm vào giỏ hàng!",
+    "success"
+  );
+
+  const numericId = Number(canonicalId);
+  if (localStorage.getItem("aqualife_user") && Number.isInteger(numericId) && numericId > 0) {
+    apiFetch("/cart", {
+      method: "POST",
+      body: JSON.stringify({ product_id: numericId, quantity: qty }),
+    }).catch(() => {});
+  }
+  return true;
+}
+
+function updateCartItemQty(productId, newQuantity) {
+  const qty = Number(newQuantity || 0);
+  const product = productsCache ? findProductById(productsCache, productId) : null;
+  const canonicalId = product ? String(product.id) : String(productId);
+  const cart = getCart();
+
+  if (qty <= 0) {
+    delete cart[canonicalId];
+    saveCart(cart);
+    const numericId = Number(canonicalId);
+    if (localStorage.getItem("aqualife_user") && Number.isInteger(numericId)) {
+      apiFetch(`/cart/${numericId}`, { method: "DELETE" }).catch(() => {});
+    }
+    return true;
+  }
+
+  if (product && typeof product.stock === "number" && qty > product.stock) {
+    showToast(
+      `Sản phẩm "${product.name}" chỉ còn tối đa ${product.stock} sản phẩm trong kho.`,
+      "error"
+    );
+    return false;
+  }
+
+  cart[canonicalId] = qty;
+  saveCart(cart);
+
+  const numericId = Number(canonicalId);
+  if (localStorage.getItem("aqualife_user") && Number.isInteger(numericId)) {
+    apiFetch(`/cart/${numericId}`, {
+      method: "PUT",
+      body: JSON.stringify({ quantity: qty }),
+    }).catch(() => {});
+  }
+  return true;
+}
+
+function removeFromCart(productId) {
+  const product = productsCache ? findProductById(productsCache, productId) : null;
+  const canonicalId = product ? String(product.id) : String(productId);
+  const cart = getCart();
+  delete cart[canonicalId];
+  saveCart(cart);
+
+  const numericId = Number(canonicalId);
+  if (localStorage.getItem("aqualife_user") && Number.isInteger(numericId)) {
+    apiFetch(`/cart/${numericId}`, { method: "DELETE" }).catch(() => {});
+  }
+}
+
+async function clearCart() {
+  saveCart({});
+  if (localStorage.getItem("aqualife_user")) {
+    try {
+      await apiFetch("/cart", { method: "DELETE" });
+    } catch {
+      // ignore offline
+    }
+  }
+}
+
+async function syncCartWithServer() {
+  if (!localStorage.getItem("aqualife_user")) return getCart();
+  try {
+    const products = await loadProducts();
+    const localCart = getCart();
+    const serverCart = await apiFetch("/cart");
+    const serverItems = (serverCart && serverCart.items) || [];
+    const serverMap = new Map(
+      serverItems.map((item) => [String(item.product_id), Number(item.quantity)])
+    );
+
+    // Nếu local có món mà server chưa có (khách thêm khi chưa đăng nhập), đẩy lên server
+    for (const [rawId, rawQty] of Object.entries(localCart)) {
+      const qty = Number(rawQty || 0);
+      if (qty <= 0) continue;
+      const prod = findProductById(products, rawId);
+      const pid = prod ? Number(prod.id) : Number(rawId);
+      if (Number.isInteger(pid) && pid > 0 && !serverMap.has(String(pid))) {
+        try {
+          await apiFetch("/cart", {
+            method: "POST",
+            body: JSON.stringify({ product_id: pid, quantity: qty }),
+          });
+        } catch {
+          // Bỏ qua nếu vượt stock
+        }
+      }
+    }
+
+    const updatedServerCart = await apiFetch("/cart");
+    const merged = {};
+    for (const item of (updatedServerCart && updatedServerCart.items) || []) {
+      merged[String(item.product_id)] = Number(item.quantity);
+    }
+    saveCart(merged);
+    return merged;
+  } catch {
+    return getCart();
+  }
+}
+
+function formatCurrency(value) {
+  return new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: "VND",
+    maximumFractionDigits: 0,
+  }).format(value || 0);
+}
 
 async function renderAuthNav() {
   const authLink = document.querySelector("a.cart-link:not(.cart-link--cart)");
@@ -107,15 +344,34 @@ async function renderAuthNav() {
 
   if (!user) {
     localStorage.removeItem("aqualife_user");
+    localStorage.removeItem("aqualife_user_info");
     return;
   }
   localStorage.setItem("aqualife_user", user.email);
+  localStorage.setItem("aqualife_user_info", JSON.stringify(user));
 
   if (authLink.firstChild) {
-    authLink.firstChild.textContent = `Xin chào, ${user.name} `;
+    authLink.firstChild.textContent = `Hồ sơ: ${user.name} `;
   }
-  authLink.href = "#";
-  authLink.addEventListener("click", (event) => event.preventDefault());
+  authLink.href = "profile.html";
+  authLink.title = "Thông tin cá nhân & Đổi mật khẩu";
+
+  const ordersLink = document.createElement("a");
+  ordersLink.className = "cart-link";
+  ordersLink.href = "orders.html";
+  ordersLink.textContent = "Đơn hàng";
+
+  let lastInserted = ordersLink;
+  authLink.after(ordersLink);
+
+  if (user.role === "admin") {
+    const adminLink = document.createElement("a");
+    adminLink.className = "cart-link cart-link--admin";
+    adminLink.href = "admin.html";
+    adminLink.textContent = "Quản trị";
+    ordersLink.after(adminLink);
+    lastInserted = adminLink;
+  }
 
   const logoutLink = document.createElement("a");
   logoutLink.className = "cart-link";
@@ -129,22 +385,30 @@ async function renderAuthNav() {
       // vẫn cho người dùng thoát về trang chủ
     }
     localStorage.removeItem("aqualife_user");
+    localStorage.removeItem("aqualife_user_info");
+    localStorage.removeItem(AQUALIFE_CART_KEY);
     window.location.href = "home.html";
   });
-  authLink.after(logoutLink);
-}
 
+  lastInserted.after(logoutLink);
+
+  await syncCartWithServer();
+}
 
 window.Aqualife = {
   getCart,
   saveCart,
   addToCart,
+  updateCartItemQty,
   removeFromCart,
+  clearCart,
+  syncCartWithServer,
   loadProducts,
   formatCurrency,
   findProductById,
   updateCartBadges,
   apiFetch,
+  showToast,
 };
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -175,4 +439,3 @@ function createDroplet(x, y) {
   document.body.appendChild(drop);
   setTimeout(() => drop.remove(), 900);
 }
-

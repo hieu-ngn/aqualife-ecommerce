@@ -7,19 +7,25 @@ document.addEventListener("DOMContentLoaded", async () => {
     loadCart();
   } catch (error) {
     console.error("Lỗi tải sản phẩm:", error);
-    document.getElementById("product-list").innerHTML = '<div style="text-align:center;color:#999;">Không thể tải sản phẩm</div>';
+    const list = document.getElementById("product-list");
+    if (list) {
+      list.innerHTML =
+        '<div style="text-align:center;color:#999;">Không thể tải sản phẩm</div>';
+    }
   }
 });
 
-function renderProducts(){
+function renderProducts() {
   const list = document.getElementById("product-list");
   if (!list) return;
   list.innerHTML = "";
-  
-  // Lấy 4 sản phẩm đầu tiên làm sản phẩm nổi bật
-  const featured = allProducts.slice(0, 4);
-  
+
+  // Lấy 4 sản phẩm đầu tiên còn hàng làm sản phẩm nổi bật
+  const available = allProducts.filter((p) => (p.stock ?? 1) > 0);
+  const featured = (available.length >= 4 ? available : allProducts).slice(0, 4);
+
   featured.forEach((p) => {
+    const outOfStock = (p.stock ?? 1) <= 0;
     list.innerHTML += `
       <div class="product">
         <a href="product-detail.html?id=${p.id}" style="text-decoration: none; color: inherit;">
@@ -27,31 +33,34 @@ function renderProducts(){
         </a>
         <h4><a href="product-detail.html?id=${p.id}" style="text-decoration: none; color: inherit; cursor: pointer;">${p.name}</a></h4>
         <p>${Aqualife.formatCurrency(p.price)}</p>
-        <button onclick="addProductToCart('${p.id}')">Thêm vào giỏ</button>
+        <button ${outOfStock ? "disabled" : ""} onclick="addProductToCart('${p.id}')">
+          ${outOfStock ? "Hết hàng" : "Thêm vào giỏ"}
+        </button>
       </div>
     `;
   });
 }
 
-function addProductToCart(productId){
-  Aqualife.addToCart(productId, 1);
+function addProductToCart(productId) {
+  const added = Aqualife.addToCart(productId, 1);
+  if (!added) return;
   updateCartCount();
   renderCart();
-  const product = allProducts.find(p => p.id === productId);
+  const product = Aqualife.findProductById(allProducts, productId);
   if (product) {
     showNotification(`${product.name} đã thêm vào giỏ`);
   }
 }
 
-function renderCart(){
+function renderCart() {
   const list = document.getElementById("cart-items");
   if (!list) return;
-  
+
   const cart = Aqualife.getCart();
   list.innerHTML = "";
-  
+
   for (const [productId, quantity] of Object.entries(cart)) {
-    const product = allProducts.find(p => p.id === productId);
+    const product = Aqualife.findProductById(allProducts, productId);
     if (product) {
       list.innerHTML += `
         <li>
@@ -63,23 +72,22 @@ function renderCart(){
   }
 }
 
-function toggleCart(){
+function toggleCart() {
   const box = document.getElementById("cartBox");
   if (box) {
     box.style.display = box.style.display === "block" ? "none" : "block";
   }
 }
 
-function updateCartCount(){
+function updateCartCount() {
   Aqualife.updateCartBadges();
 }
 
-function loadCart(){
+function loadCart() {
   renderCart();
   updateCartCount();
 }
 
-function showNotification(message){
+function showNotification(message) {
   console.log(message);
 }
-

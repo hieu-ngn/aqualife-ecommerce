@@ -22,3 +22,14 @@ def login_required(view):
         return view(*args, **kwargs)
 
     return wrapper
+
+
+def admin_required(view):
+    @wraps(view)
+    @login_required
+    def wrapper(*args, **kwargs):
+        if g.current_user.get("role") != "admin":
+            return error("Chỉ quản trị viên mới có quyền thực hiện thao tác này", 403)
+        return view(*args, **kwargs)
+
+    return wrapper

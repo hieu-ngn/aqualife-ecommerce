@@ -58,6 +58,7 @@ CREATE TABLE products (
     price           NUMERIC(12, 2) NOT NULL CHECK (price >= 0),
     stock           INTEGER NOT NULL DEFAULT 0 CHECK (stock >= 0),
     image           TEXT,
+    water_type      VARCHAR(50) NOT NULL DEFAULT 'Nước ngọt',
     status          VARCHAR(20) NOT NULL DEFAULT 'active'
                         CHECK (status IN ('active', 'inactive')),
     created_at      TIMESTAMP NOT NULL DEFAULT NOW(),

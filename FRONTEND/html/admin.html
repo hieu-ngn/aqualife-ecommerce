@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="../image/icon.img/logo_web.png" type="image/png" />
+  <title>Aqualife Admin - The Oceanic Curator</title>
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/admin.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script defer src="../js/common.js"></script>
+  <script defer src="../js/admin.js"></script>
+</head>
+<body class="admin-body">
+  <!-- Màn hình cảnh báo nếu không phải Admin -->
+  <div id="admin-guard-msg" class="container hidden" style="padding: 60px 0;"></div>
+
+  <!-- Giao diện Aqualife Admin Độc lập -->
+  <div id="admin-workspace" class="admin-shell">
+    <!-- SIDEBAR TRÁI -->
+    <aside class="adm-sidebar">
+      <div>
+        <a href="admin.html" class="adm-brand">
+          <div class="adm-brand-logo">
+            <i class="fa-solid fa-water"></i>
+          </div>
+          <div class="adm-brand-text">
+            <strong>Aqualife Admin</strong>
+            <span>THE OCEANIC CURATOR</span>
+          </div>
+        </a>
+
+        <div class="adm-nav-section-label">QUẢN TRỊ HỆ THỐNG</div>
+        <nav class="adm-nav">
+          <button type="button" class="adm-nav-btn" data-tab="overview">
+            <i class="fa-solid fa-border-all"></i>
+            <span>Tổng quan</span>
+          </button>
+          <button type="button" class="adm-nav-btn active" data-tab="products">
+            <i class="fa-solid fa-box-archive"></i>
+            <span>Quản lý sản phẩm</span>
+          </button>
+          <button type="button" class="adm-nav-btn" data-tab="orders">
+            <i class="fa-solid fa-receipt"></i>
+            <span>Đơn hàng</span>
+          </button>
+          <button type="button" class="adm-nav-btn" data-tab="users">
+            <i class="fa-solid fa-user-group"></i>
+            <span>Khách hàng</span>
+          </button>
+          <button type="button" class="adm-nav-btn" data-tab="inventory">
+            <i class="fa-solid fa-boxes-stacked"></i>
+            <span>Kho hàng</span>
+          </button>
+          <button type="button" class="adm-nav-btn" data-tab="revenue">
+            <i class="fa-solid fa-chart-line"></i>
+            <span>Báo cáo doanh thu</span>
+          </button>
+          <button type="button" class="adm-nav-btn" data-tab="settings">
+            <i class="fa-solid fa-gear"></i>
+            <span>Cài đặt</span>
+          </button>
+        </nav>
+      </div>
+
+      <div class="adm-sidebar-footer">
+        <div class="adm-store-links">
+          <a href="home.html" class="adm-store-link" title="Xem giao diện khách hàng">
+            <i class="fa-solid fa-store"></i> Cửa hàng
+          </a>
+          <a href="#" id="adm-logout-btn" class="adm-store-link" title="Đăng xuất">
+            <i class="fa-solid fa-right-from-bracket"></i> Đăng xuất
+          </a>
+        </div>
+        <div class="adm-eco-box">
+          <div class="adm-eco-left">
+            <span class="adm-eco-dot"></span>
+            <span>Hệ sinh thái ổn định</span>
+          </div>
+          <i class="fa-solid fa-Sliders" style="opacity:0.75;">⚙</i>
+        </div>
+      </div>
+    </aside>
+
+    <!-- KHU VỰC CHÍNH BÊN PHẢI -->
+    <div class="adm-main-wrap">
+      <!-- TOPBAR -->
+      <header class="adm-topbar">
+        <div class="adm-global-search">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input id="global-admin-search" type="search" placeholder="Tìm kiếm cá thể, đơn hàng, khách hàng..." />
+        </div>
+
+        <div class="adm-topbar-right">
+          <button type="button" id="topbar-add-product-btn" class="btn-adm-primary">
+            <i class="fa-solid fa-plus"></i> Thêm sản phẩm
+          </button>
+
+          <button type="button" id="topbar-notif-btn" class="adm-notif-btn" title="Thông báo hệ thống">
+            <i class="fa-solid fa-bell"></i>
+            <span class="adm-notif-dot" id="topbar-notif-dot"></span>
+          </button>
+
+          <div class="adm-topbar-divider"></div>
+
+          <div class="adm-profile-chip">
+            <div class="adm-profile-text">
+              <strong id="adm-current-name">Admin</strong>
+              <span id="adm-current-role">Quản trị viên</span>
+            </div>
+            <div class="adm-profile-avatar" id="adm-current-avatar">
+              <i class="fa-solid fa-circle-user"></i>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- MAIN CONTENT -->
+      <main class="adm-content">
+        <!-- ==============================================================
+             PANEL 1 (MẶC ĐỊNH): QUẢN LÝ SẢN PHẨM (Chuẩn theo mẫu ảnh)
+             ============================================================== -->
+        <section id="panel-products" class="adm-panel active">
+          <div class="adm-breadcrumb">
+            <span>Admin</span>
+            <i class="fa-solid fa-chevron-right" style="font-size:10px;"></i>
+            <span class="bc-link">Sản phẩm</span>
+            <i class="fa-solid fa-chevron-right" style="font-size:10px;"></i>
+            <span>Danh mục kho sinh vật</span>
+          </div>
+
+          <div class="adm-page-header">
+            <div class="adm-title-group">
+              <h1>Quản lý sản phẩm</h1>
+              <span class="adm-updated-note" id="catalog-updated-time">Cập nhật: Hôm nay (GMT+7)</span>
+            </div>
+
+            <div class="adm-header-actions">
+              <div class="adm-header-actions-top">
+                <button type="button" id="btn-import-products" class="btn-adm-outline">
+                  <i class="fa-solid fa-upload"></i> Nhập danh sách
+                </button>
+                <button type="button" id="btn-export-excel" class="btn-adm-outline">
+                  <i class="fa-solid fa-download"></i> Xuất file Excel
+                </button>
+              </div>
+              <button type="button" id="btn-open-prod-modal" class="btn-adm-primary">
+                <i class="fa-solid fa-circle-plus"></i> Thêm sản phẩm mới
+              </button>
+            </div>
+          </div>
+
+          <!-- 4 KPI CARDS -->
+          <div class="adm-kpi-grid">
+            <div class="adm-kpi-card">
+              <div class="adm-kpi-top">
+                <div>
+                  <div class="adm-kpi-label">TỔNG SỐ SẢN PHẨM</div>
+                  <div class="adm-kpi-number" id="stat-total-products">0</div>
+                </div>
+                <div class="adm-kpi-icon icon-blue">
+                  <i class="fa-solid fa-Sim-card fa-layer-group"></i>
+                </div>
+              </div>
+              <div class="adm-kpi-bottom">
+                <span class="adm-kpi-trend-blue" id="stat-total-sub">
+                  <i class="fa-solid fa-arrow-trend-up"></i> +12 tháng này
+                </span>
+                <svg width="78" height="24" viewBox="0 0 78 24" fill="none">
+                  <path d="M2 18C14 8 26 8 38 15C50 22 62 20 76 10" stroke="#0277bd" stroke-width="2.2" stroke-linecap="round"/>
+                </svg>
+              </div>
+            </div>
+
+            <div class="adm-kpi-card">
+              <div class="adm-kpi-top">
+                <div>
+                  <div class="adm-kpi-label">ĐANG KINH DOANH</div>
+                  <div class="adm-kpi-number" id="stat-active-products">0</div>
+                </div>
+                <div class="adm-kpi-icon icon-blue">
+                  <i class="fa-solid fa-store"></i>
+                </div>
+              </div>
+              <div class="adm-kpi-bottom">
+                <span class="adm-kpi-trend-muted" id="stat-active-percent">
+                  <span style="color:#0277bd;">●</span> 100% danh mục
+                </span>
+                <svg width="78" height="24" viewBox="0 0 78 24" fill="none">
+                  <path d="M2 19C18 19 28 16 42 12C56 8 66 9 76 12" stroke="#0277bd" stroke-width="2.2" stroke-linecap="round"/>
+                </svg>
+              </div>
+            </div>
+
+            <div class="adm-kpi-card">
+              <div class="adm-kpi-top">
+                <div>
+                  <div class="adm-kpi-label">CẢNH BÁO SẮP HẾT</div>
+                  <div class="adm-kpi-number text-orange" id="stat-low-stock">0</div>
+                </div>
+                <div class="adm-kpi-icon icon-orange">
+                  <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+              </div>
+              <div class="adm-kpi-bottom">
+                <span class="adm-kpi-trend-orange">Khuyến nghị nhập thêm</span>
+                <span class="adm-mini-badge badge-urgent">Cấp bách</span>
+              </div>
+            </div>
+
+            <div class="adm-kpi-card">
+              <div class="adm-kpi-top">
+                <div>
+                  <div class="adm-kpi-label">HẾT HÀNG</div>
+                  <div class="adm-kpi-number text-red" id="stat-out-stock">0</div>
+                </div>
+                <div class="adm-kpi-icon icon-red">
+                  <i class="fa-solid fa-cart-shopping"></i>
+                </div>
+              </div>
+              <div class="adm-kpi-bottom">
+                <span class="adm-kpi-trend-red">Gián đoạn doanh thu</span>
+                <span class="adm-mini-badge badge-loss">-5.4% so tuần trước</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- BỘ LỌC & BULK ACTIONS -->
+          <div class="adm-filter-box">
+            <div class="adm-filter-row">
+              <div class="adm-search-input-wrap">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input id="admin-prod-search" class="adm-input" type="search" placeholder="Tìm theo tên cá thể, mã SKU..." />
+              </div>
+
+              <select id="admin-prod-category" class="adm-select">
+                <option value="">Tất cả danh mục</option>
+              </select>
+
+              <select id="admin-prod-status" class="adm-select">
+                <option value="">Tất cả trạng thái</option>
+                <option value="selling">Đang kinh doanh (Ổn định)</option>
+                <option value="low">Sắp hết hàng (≤ 5 cá thể)</option>
+                <option value="out">Hết hàng (0 cá thể)</option>
+                <option value="inactive">Ngừng kinh doanh (Đã ẩn)</option>
+              </select>
+
+              <select id="admin-prod-price-range" class="adm-select">
+                <option value="">Mọi khoảng giá</option>
+                <option value="under100">Dưới 100.000đ</option>
+                <option value="100to300">100.000đ – 300.000đ</option>
+                <option value="over300">Trên 300.000đ</option>
+              </select>
+
+              <select id="admin-prod-sort" class="adm-select">
+                <option value="updated">Mới cập nhật</option>
+                <option value="price_desc">Giá cao → thấp</option>
+                <option value="price_asc">Giá thấp → cao</option>
+                <option value="stock_asc">Tồn kho thấp nhất</option>
+                <option value="name_asc">Tên A → Z</option>
+              </select>
+            </div>
+
+            <div class="adm-bulk-bar">
+              <label class="adm-bulk-left">
+                <input type="checkbox" id="select-all-products" />
+                <span>Chọn tất cả trang này (<span id="selected-count">0</span> đã chọn)</span>
+              </label>
+
+              <div class="adm-bulk-actions">
+                <button type="button" id="btn-bulk-delete" class="btn-bulk-danger">
+                  <i class="fa-regular fa-trash-can"></i> Xóa đã chọn
+                </button>
+                <button type="button" id="btn-bulk-toggle" class="btn-bulk-neutral">
+                  <i class="fa-solid fa-arrows-rotate"></i> Đổi trạng thái
+                </button>
+                <button type="button" id="btn-bulk-price" class="btn-bulk-neutral">
+                  <i class="fa-solid fa-money-bill-wave"></i> Cập nhật giá sỉ
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- BẢNG DỮ LIỆU SINH VẬT & SKU -->
+          <div class="adm-table-card">
+            <div class="adm-table-scroll">
+              <table class="creature-table">
+                <thead>
+                  <tr>
+                    <th style="width:42px;"></th>
+                    <th>THÔNG TIN SINH VẬT & SKU</th>
+                    <th>PHÂN LOẠI HỆ</th>
+                    <th>ĐƠN GIÁ NIÊM YẾT</th>
+                    <th>TỒN KHO SINH THÁI</th>
+                    <th>TRẠNG THÁI</th>
+                    <th>CẬP NHẬT</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-products-tbody">
+                  <tr>
+                    <td colspan="7" class="muted" style="text-align:center;padding:32px;">
+                      Đang tải danh mục kho sinh vật...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="adm-table-footer">
+              <div id="catalog-pagination-info">Hiển thị 0 / 0 cá thể sinh vật</div>
+              <div class="adm-page-btns" id="catalog-pagination-btns"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==============================================================
+             PANEL 2: TỔNG QUAN (OVERVIEW)
+             ============================================================== -->
+        <section id="panel-overview" class="adm-panel">
+          <div class="adm-breadcrumb">
+            <span>Admin</span> <i class="fa-solid fa-chevron-right" style="font-size:10px;"></i>
+            <span class="bc-link">Tổng quan</span>
+          </div>
+          <div class="adm-page-header">
+            <div class="adm-title-group">
+              <h1>Tổng quan Hệ sinh thái Aqualife</h1>
+            </div>
+          </div>
+
+          <div class="adm-kpi-grid">
+            <div class="adm-kpi-card">
+              <div class="adm-kpi-top">
+                <div>
+                  <div class="adm-kpi-label">DOANH THU HOÀN TẤT</div>
+                  <div class="adm-kpi-number" id="kpi-completed-revenue">0 ₫</div>
+                </div>
+                <div class="adm-kpi-icon icon-blue"><i class="fa-solid fa-sack-dollar"></i></div>
+              </div>
+              <div class="adm-kpi-bottom">
+                <span class="adm-kpi-trend-blue" id="kpi-active-revenue">Tổng đơn hiệu lực: 0 ₫</span>
+              </div>
+            </div>
+
+            <div class="adm-kpi-card">
+              <div class="adm-kpi-top">
+                <div>
+                  <div class="adm-kpi-label">TỔNG ĐƠN HÀNG</div>
+                  <div class="adm-kpi-number" id="kpi-total-orders">0</div>
+                </div>
+                <div class="adm-kpi-icon icon-blue"><i class="fa-solid fa-truck-fast"></i></div>
+              </div>
+              <div class="adm-kpi-bottom">
+                <span class="adm-kpi-trend-orange" id="kpi-pending-orders">0 đơn chờ xác nhận</span>
+              </div>
+            </div>
+
+            <div class="adm-kpi-card">
+              <div class="adm-kpi-top">
+                <div>
+                  <div class="adm-kpi-label">SẢN PHẨM ĐANG BÁN</div>
+                  <div class="adm-kpi-number" id="kpi-active-products">0</div>
+                </div>
+                <div class="adm-kpi-icon icon-orange"><i class="fa-solid fa-fish-fins"></i></div>
+              </div>
+              <div class="adm-kpi-bottom">
+                <span class="adm-kpi-trend-muted" id="kpi-low-stock">0 sắp hết hàng</span>
+              </div>
+            </div>
+
+            <div class="adm-kpi-card">
+              <div class="adm-kpi-top">
+                <div>
+                  <div class="adm-kpi-label">KHÁCH HÀNG THÀNH VIÊN</div>
+                  <div class="adm-kpi-number" id="kpi-total-users">0</div>
+                </div>
+                <div class="adm-kpi-icon icon-blue"><i class="fa-solid fa-users"></i></div>
+              </div>
+              <div class="adm-kpi-bottom">
+                <span class="adm-kpi-trend-muted" id="kpi-active-users">0 đang hoạt động</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-2">
+            <div class="adm-table-card" style="padding:20px;">
+              <h3 style="margin-top:0;color:#01579b;"><i class="fa-solid fa-trophy"></i> Top Sinh vật Bán chạy nhất</h3>
+              <div class="adm-table-scroll">
+                <table class="creature-table">
+                  <thead>
+                    <tr>
+                      <th>Sinh vật</th>
+                      <th>Đã bán</th>
+                      <th>Tồn kho</th>
+                      <th>Doanh thu</th>
+                    </tr>
+                  </thead>
+                  <tbody id="overview-top-products"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="adm-table-card" style="padding:20px;">
+              <h3 style="margin-top:0;color:#01579b;"><i class="fa-solid fa-clock-rotate-left"></i> Đơn hàng Gần đây</h3>
+              <div class="adm-table-scroll">
+                <table class="creature-table">
+                  <thead>
+                    <tr>
+                      <th>Mã đơn</th>
+                      <th>Khách hàng</th>
+                      <th>Tổng tiền</th>
+                      <th>Trạng thái</th>
+                    </tr>
+                  </thead>
+                  <tbody id="overview-recent-orders"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==============================================================
+             PANEL 3: ĐƠN HÀNG (ORDERS)
+             ============================================================== -->
+        <section id="panel-orders" class="adm-panel">
+          <div class="adm-breadcrumb">
+            <span>Admin</span> <i class="fa-solid fa-chevron-right" style="font-size:10px;"></i>
+            <span class="bc-link">Đơn hàng</span>
+          </div>
+          <div class="adm-page-header">
+            <div class="adm-title-group">
+              <h1>Điều phối & Quản lý Đơn hàng</h1>
+            </div>
+          </div>
+
+          <div class="adm-filter-box">
+            <div style="display:flex;gap:12px;flex-wrap:wrap;">
+              <div class="adm-search-input-wrap" style="flex:1;min-width:240px;">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input id="admin-order-search" class="adm-input" type="search" placeholder="Tìm theo mã đơn, tên khách, SĐT, email..." />
+              </div>
+              <select id="admin-order-status" class="adm-select" style="width:240px;">
+                <option value="">Tất cả trạng thái đơn</option>
+                <option value="pending">Chờ xác nhận (pending)</option>
+                <option value="confirmed">Đã xác nhận (confirmed)</option>
+                <option value="processing">Đang chuẩn bị (processing)</option>
+                <option value="shipping">Đang giao (shipping)</option>
+                <option value="completed">Hoàn tất (completed)</option>
+                <option value="cancelled">Đã hủy (cancelled)</option>
+              </select>
+              <button type="button" id="admin-order-filter-btn" class="btn-adm-primary">Lọc đơn hàng</button>
+            </div>
+          </div>
+
+          <div class="adm-table-card">
+            <div class="adm-table-scroll">
+              <table class="creature-table">
+                <thead>
+                  <tr>
+                    <th>MÃ ĐƠN</th>
+                    <th>KHÁCH NHẬN & ĐỊA CHỈ</th>
+                    <th>SINH VẬT ĐẶT MUA</th>
+                    <th>TỔNG TIỀN</th>
+                    <th>THANH TOÁN</th>
+                    <th>TRẠNG THÁI</th>
+                    <th>CẬP NHẬT TRẠNG THÁI</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-orders-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==============================================================
+             PANEL 4: KHÁCH HÀNG (USERS)
+             ============================================================== -->
+        <section id="panel-users" class="adm-panel">
+          <div class="adm-breadcrumb">
+            <span>Admin</span> <i class="fa-solid fa-chevron-right" style="font-size:10px;"></i>
+            <span class="bc-link">Khách hàng</span>
+          </div>
+          <div class="adm-page-header">
+            <div class="adm-title-group">
+              <h1>Quản lý Khách hàng & Phân quyền</h1>
+            </div>
+          </div>
+
+          <div class="adm-filter-box">
+            <div style="display:flex;gap:12px;flex-wrap:wrap;">
+              <div class="adm-search-input-wrap" style="flex:1;min-width:240px;">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input id="admin-user-search" class="adm-input" type="search" placeholder="Tìm theo họ tên, email, SĐT..." />
+              </div>
+              <select id="admin-user-role" class="adm-select" style="width:200px;">
+                <option value="">Tất cả vai trò</option>
+                <option value="customer">Khách hàng (Customer)</option>
+                <option value="admin">Quản trị viên (Admin)</option>
+              </select>
+              <select id="admin-user-status" class="adm-select" style="width:200px;">
+                <option value="">Tất cả trạng thái</option>
+                <option value="active">Đang hoạt động</option>
+                <option value="inactive">Đã khóa</option>
+              </select>
+              <button type="button" id="admin-user-filter-btn" class="btn-adm-primary">Lọc</button>
+            </div>
+          </div>
+
+          <div class="adm-table-card">
+            <div class="adm-table-scroll">
+              <table class="creature-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>HỌ TÊN & EMAIL</th>
+                    <th>SĐT & ĐỊA CHỈ</th>
+                    <th>ĐƠN HÀNG / CHI TIÊU</th>
+                    <th>VAI TRÒ</th>
+                    <th>TRẠNG THÁI</th>
+                    <th>THAO TÁC</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-users-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==============================================================
+             PANEL 5: KHO HÀNG & DANH MỤC (INVENTORY)
+             ============================================================== -->
+        <section id="panel-inventory" class="adm-panel">
+          <div class="adm-breadcrumb">
+            <span>Admin</span> <i class="fa-solid fa-chevron-right" style="font-size:10px;"></i>
+            <span class="bc-link">Kho hàng & Danh mục</span>
+          </div>
+          <div class="adm-page-header">
+            <div class="adm-title-group">
+              <h1>Quản lý Danh mục & Bổ sung Tồn kho Sinh thái</h1>
+            </div>
+            <button type="button" id="btn-open-cat-modal" class="btn-adm-primary">
+              <i class="fa-solid fa-plus"></i> Thêm danh mục hệ sinh thái
+            </button>
+          </div>
+
+          <div class="adm-table-card" style="margin-bottom:24px;">
+            <div class="adm-table-scroll">
+              <table class="creature-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>TÊN DANH MỤC</th>
+                    <th>MÔ TẢ HỆ SINH THÁI</th>
+                    <th>SỐ LƯỢNG LOÀI</th>
+                    <th>TRẠNG THÁI</th>
+                    <th>THAO TÁC</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-categories-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="adm-table-card" style="padding:20px;">
+            <h3 style="margin-top:0;color:#b45309;">
+              <i class="fa-solid fa-triangle-exclamation"></i> Danh sách Sinh vật cần Nhập thêm Khẩn cấp (Tồn kho ≤ 5)
+            </h3>
+            <div class="adm-table-scroll">
+              <table class="creature-table">
+                <thead>
+                  <tr>
+                    <th>SINH VẬT & SKU</th>
+                    <th>DANH MỤC</th>
+                    <th>TỒN HIỆN TẠI</th>
+                    <th>NHẬP NHANH (+ CÁ THỂ)</th>
+                  </tr>
+                </thead>
+                <tbody id="inventory-low-stock-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==============================================================
+             PANEL 6: BÁO CÁO DOANH THU (REVENUE)
+             ============================================================== -->
+        <section id="panel-revenue" class="adm-panel">
+          <div class="adm-breadcrumb">
+            <span>Admin</span> <i class="fa-solid fa-chevron-right" style="font-size:10px;"></i>
+            <span class="bc-link">Báo cáo doanh thu</span>
+          </div>
+          <div class="adm-page-header">
+            <div class="adm-title-group">
+              <h1>Báo cáo Doanh thu & Phân tích Kinh doanh</h1>
+            </div>
+          </div>
+
+          <div class="grid grid-2">
+            <div class="adm-table-card" style="padding:24px;">
+              <h3 style="margin-top:0;color:#01579b;"><i class="fa-solid fa-chart-Simple"></i> Doanh thu theo Phân loại Hệ</h3>
+              <div id="revenue-by-category-box"></div>
+            </div>
+
+            <div class="adm-table-card" style="padding:24px;">
+              <h3 style="margin-top:0;color:#01579b;"><i class="fa-solid fa-credit-card"></i> Doanh thu theo Phương thức Thanh toán</h3>
+              <div id="revenue-by-payment-box"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==============================================================
+             PANEL 7: CÀI ĐẶT (SETTINGS)
+             ============================================================== -->
+        <section id="panel-settings" class="adm-panel">
+          <div class="adm-breadcrumb">
+            <span>Admin</span> <i class="fa-solid fa-chevron-right" style="font-size:10px;"></i>
+            <span class="bc-link">Cài đặt</span>
+          </div>
+          <div class="adm-page-header">
+            <div class="adm-title-group">
+              <h1>Cài đặt Hệ thống Aqualife</h1>
+            </div>
+          </div>
+
+          <div class="grid grid-2">
+            <div class="adm-table-card" style="padding:24px;">
+              <h3 style="margin-top:0;color:#01579b;">Thông tin Trại & Cửa hàng</h3>
+              <div class="field-group">
+                <label><strong>Tên thương hiệu</strong></label>
+                <input class="adm-input" type="text" value="Aqualife - The Oceanic Curator" readonly />
+              </div>
+              <div class="field-group">
+                <label><strong>Địa chỉ Showroom</strong></label>
+                <input class="adm-input" type="text" value="207 Đ. Giải Phóng, Đồng Tâm, Bạch Mai, Hà Nội" readonly />
+              </div>
+              <div class="field-group">
+                <label><strong>Hotline Kỹ thuật & Bảo hành sống</strong></label>
+                <input class="adm-input" type="text" value="086 781 7946 | info@aqualife.com" readonly />
+              </div>
+              <div style="display:flex;gap:10px;margin-top:16px;">
+                <a href="profile.html" class="btn-adm-primary">Cập nhật Hồ sơ Cá nhân Admin</a>
+                <a href="home.html" class="btn-adm-outline">Mở Trang chủ Khách hàng</a>
+              </div>
+            </div>
+
+            <div class="adm-table-card" style="padding:24px;">
+              <h3 style="margin-top:0;color:#01579b;">Trạng thái Kết nối Cơ sở dữ liệu</h3>
+              <p><strong>Hệ quản trị:</strong> PostgreSQL (pgAdmin 4 - Database <code>aqualife</code>)</p>
+              <p><strong>Chế độ:</strong> Unified Flask Server + Transactional Row Locking (<code>FOR UPDATE</code>)</p>
+              <p><strong>Ngưỡng cảnh báo sắp hết hàng:</strong> ≤ 5 cá thể / loài</p>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <!-- MODAL 1: THÊM / SỬA SẢN PHẨM -->
+  <div id="product-modal-backdrop" class="admin-modal-backdrop hidden">
+    <div class="admin-modal">
+      <h3 id="product-modal-title">Thêm sản phẩm mới</h3>
+      <form id="product-modal-form" novalidate>
+        <input type="hidden" id="prod-form-id" />
+        <div class="field-group">
+          <label for="prod-form-name"><strong>Tên cá thể / sinh vật *</strong></label>
+          <input id="prod-form-name" class="adm-input" type="text" required placeholder="VD: Kim Long Quá Bối 24K (Full Helmet)" />
+        </div>
+        <div class="field-grid">
+          <div class="field-group">
+            <label for="prod-form-category"><strong>Phân loại loài (Danh mục) *</strong></label>
+            <select id="prod-form-category" class="adm-select"></select>
+          </div>
+          <div class="field-group">
+            <label for="prod-form-water-type"><strong>Phân loại môi trường nước *</strong></label>
+            <select id="prod-form-water-type" class="adm-select">
+              <option value="Nước ngọt">💧 Nước ngọt (Freshwater)</option>
+              <option value="Nước mặn">🌊 Nước mặn / Biển (Marine & Reef)</option>
+              <option value="Nước lợ">🌿 Nước lợ (Brackish)</option>
+              <option value="Đa môi trường">🔄 Đa môi trường / Chung</option>
+            </select>
+          </div>
+        </div>
+        <div class="field-grid">
+          <div class="field-group">
+            <label for="prod-form-price"><strong>Đơn giá niêm yết (VNĐ) *</strong></label>
+            <input id="prod-form-price" class="adm-input" type="number" min="0" step="1000" required placeholder="350000" />
+          </div>
+          <div class="field-group">
+            <label for="prod-form-stock"><strong>Tồn kho sinh thái (Cá thể) *</strong></label>
+            <input id="prod-form-stock" class="adm-input" type="number" min="0" step="1" required placeholder="25" />
+          </div>
+        </div>
+        <div class="field-grid">
+          <div class="field-group">
+            <label for="prod-form-image"><strong>Đường dẫn hình ảnh</strong></label>
+            <input id="prod-form-image" class="adm-input" type="text" placeholder="image/product.img/ca-betta-halfmoon.jpg" />
+          </div>
+          <div class="field-group">
+            <label for="prod-form-status"><strong>Trạng thái kinh doanh</strong></label>
+            <select id="prod-form-status" class="adm-select">
+              <option value="active">Đang kinh doanh (Active)</option>
+              <option value="inactive">Ngừng kinh doanh (Inactive)</option>
+            </select>
+          </div>
+        </div>
+        <div class="field-group">
+          <label for="prod-form-desc"><strong>Đặc điểm & Mô tả kỹ thuật</strong></label>
+          <textarea id="prod-form-desc" class="textarea" rows="3" placeholder="Kích thước, màu sắc, thông số nước khuyến nghị..."></textarea>
+        </div>
+        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
+          <button type="button" id="prod-modal-cancel" class="btn-adm-outline">Hủy</button>
+          <button type="submit" id="prod-modal-save" class="btn-adm-primary">Lưu thông tin sinh vật</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 2: CẬP NHẬT GIÁ SỈ & TỒN KHO HÀNG LOẠT -->
+  <div id="bulk-price-modal-backdrop" class="admin-modal-backdrop hidden">
+    <div class="admin-modal">
+      <h3>Cập nhật Giá sỉ / Tồn kho Hàng loạt (<span id="bulk-modal-count">0</span> cá thể)</h3>
+      <form id="bulk-price-form" novalidate>
+        <div class="field-group">
+          <label for="bulk-price-percent"><strong>Điều chỉnh giá theo % (VD: -10 để giảm 10%, 15 để tăng 15%)</strong></label>
+          <input id="bulk-price-percent" class="adm-input" type="number" step="1" placeholder="Để trống nếu không đổi theo %" />
+        </div>
+        <div class="field-group">
+          <label for="bulk-fixed-price"><strong>Hoặc đặt đồng giá cố định (VNĐ)</strong></label>
+          <input id="bulk-fixed-price" class="adm-input" type="number" min="0" step="1000" placeholder="Để trống nếu không đặt đồng giá" />
+        </div>
+        <div class="field-group">
+          <label for="bulk-stock-delta"><strong>Bổ sung / trừ tồn kho đồng loạt (VD: +10 hoặc -5 cá thể)</strong></label>
+          <input id="bulk-stock-delta" class="adm-input" type="number" step="1" placeholder="0" />
+        </div>
+        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
+          <button type="button" id="bulk-modal-cancel" class="btn-adm-outline">Hủy</button>
+          <button type="submit" class="btn-adm-primary">Áp dụng hàng loạt</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 3: NHẬP DANH SÁCH SẢN PHẨM (IMPORT JSON) -->
+  <div id="import-modal-backdrop" class="admin-modal-backdrop hidden">
+    <div class="admin-modal">
+      <h3>Nhập danh sách sinh vật nhanh (JSON)</h3>
+      <p class="muted" style="font-size:13px;">Dán mảng JSON các sinh vật cần nhập kho hoặc chọn tệp <code>.json</code>:</p>
+      <form id="import-modal-form" novalidate>
+        <div class="field-group">
+          <input id="import-file-input" type="file" accept=".json" class="adm-input" />
+        </div>
+        <div class="field-group">
+          <textarea id="import-json-textarea" class="textarea" rows="5" placeholder='[{"name": "Cá Đĩa Lam Blue Diamond", "price": 1250000, "stock": 19, "description": "Size 9-10cm nhập khẩu Malaysia"}]'></textarea>
+        </div>
+        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
+          <button type="button" id="import-modal-cancel" class="btn-adm-outline">Đóng</button>
+          <button type="submit" class="btn-adm-primary">Nhập vào Kho PostgreSQL</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 4: THÊM / SỬA DANH MỤC -->
+  <div id="category-modal-backdrop" class="admin-modal-backdrop hidden">
+    <div class="admin-modal">
+      <h3 id="category-modal-title">Thêm danh mục</h3>
+      <form id="category-modal-form" novalidate>
+        <input type="hidden" id="cat-form-id" />
+        <div class="field-group">
+          <label for="cat-form-name"><strong>Tên danh mục *</strong></label>
+          <input id="cat-form-name" class="adm-input" type="text" required placeholder="VD: Cá Biển & Rạn San Hô" />
+        </div>
+        <div class="field-group">
+          <label for="cat-form-status"><strong>Trạng thái</strong></label>
+          <select id="cat-form-status" class="adm-select">
+            <option value="active">Hoạt động (Active)</option>
+            <option value="inactive">Tạm ẩn (Inactive)</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label for="cat-form-desc"><strong>Mô tả</strong></label>
+          <textarea id="cat-form-desc" class="textarea" rows="3" placeholder="Mô tả nhóm sinh vật..."></textarea>
+        </div>
+        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px;">
+          <button type="button" id="cat-modal-cancel" class="btn-adm-outline">Hủy</button>
+          <button type="submit" id="cat-modal-save" class="btn-adm-primary">Lưu danh mục</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</body>
+</html>

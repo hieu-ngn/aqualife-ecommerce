@@ -44,7 +44,14 @@ function ganSuKien() {
   list?.addEventListener("click", (e) => {
     if (e.target.classList.contains("btn-add")) {
       const id = e.target.dataset.id;
-      Aqualife.addToCart(id, 1);
+      const ok = Aqualife.addToCart(id, 1);
+      if (ok) {
+        const originalText = e.target.textContent;
+        e.target.textContent = "Đã thêm ✓";
+        setTimeout(() => {
+          e.target.textContent = originalText;
+        }, 700);
+      }
     }
   });
 }
@@ -136,7 +143,7 @@ function locSanPham() {
 
     const dungTimKiem =
       sp.name.toLowerCase().includes(tuKhoa) ||
-      sp.shortDescription.toLowerCase().includes(tuKhoa);
+      (sp.shortDescription || "").toLowerCase().includes(tuKhoa);
 
     return dungLoai && dungMoiTruong && dungTimKiem;
   });
@@ -176,6 +183,14 @@ function renderSanPham() {
 }
 
 function taoCardSanPham(sp) {
+  const outOfStock = typeof sp.stock === "number" && sp.stock <= 0;
+  const stockLabel =
+    typeof sp.stock === "number"
+      ? outOfStock
+        ? '<span style="color:#c83b3b;font-size:0.85rem;font-weight:600;">Hết hàng</span>'
+        : `<span style="color:#1b8a5a;font-size:0.85rem;">Còn hàng (${sp.stock})</span>`
+      : "";
+
   return `
     <div class="product-card">
       <a href="product-detail.html?id=${sp.id}" class="product-image">
@@ -188,15 +203,15 @@ function taoCardSanPham(sp) {
           </a>
         </h3>
         <p class="species">${sp.species}</p>
-        <p class="environment">${sp.waterType}</p>
+        <p class="environment">${sp.waterType} ${stockLabel ? " • " + stockLabel : ""}</p>
         <p class="description">${sp.shortDescription}</p>
 
         <div class="product-footer">
           <span class="price">
             ${Aqualife.formatCurrency(sp.price)}
           </span>
-          <button class="btn-add" data-id="${sp.id}">
-            Thêm vào giỏ
+          <button class="btn-add" data-id="${sp.id}" ${outOfStock ? "disabled style='opacity:0.5;cursor:not-allowed;'" : ""}>
+            ${outOfStock ? "Hết hàng" : "Thêm vào giỏ"}
           </button>
         </div>
       </div>

@@ -41,7 +41,7 @@ def authenticate_user(email, password):
     with get_db_cursor() as cur:
         cur.execute(
             """
-            SELECT id, name, email, password_hash, role, status
+            SELECT id, name, email, password_hash, role, status, phone, address
             FROM users
             WHERE LOWER(email) = LOWER(%s)
             """,
@@ -61,7 +61,7 @@ def authenticate_user(email, password):
 def get_user_by_id(user_id):
     with get_db_cursor() as cur:
         cur.execute(
-            "SELECT id, name, email, role, status FROM users WHERE id = %s",
+            "SELECT id, name, email, role, status, phone, address FROM users WHERE id = %s",
             (user_id,),
         )
         return cur.fetchone()

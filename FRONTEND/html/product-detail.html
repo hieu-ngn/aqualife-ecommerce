@@ -39,7 +39,10 @@
 
         <article class="card detail-info">
           <h1 id="detail-name">Đang tải...</h1>
-          <p class="price" id="detail-price"></p>
+          <div class="detail-price-row">
+            <p class="price" id="detail-price"></p>
+            <a href="#reviews-section" class="rating-badge" id="detail-rating-summary">★ Chưa có đánh giá</a>
+          </div>
           <p><strong>Loài:</strong> <span id="detail-species"></span></p>
           <p><strong>Môi trường:</strong> <span id="detail-water-type"></span></p>
           <p class="muted" id="detail-description"></p>
@@ -49,6 +52,28 @@
             <button id="detail-add" class="btn btn-primary" type="button">Thêm vào giỏ</button>
           </div>
         </article>
+      </section>
+
+      <section id="reviews-section" class="card reviews-section">
+        <div class="reviews-header">
+          <div>
+            <h2>Đánh giá & Nhận xét khách hàng</h2>
+            <p class="muted" id="reviews-subtitle">Chia sẻ trải nghiệm thực tế từ khách hàng đã mua tại Aqualife</p>
+          </div>
+          <div class="reviews-score-box">
+            <div class="reviews-avg" id="reviews-avg-number">0.0</div>
+            <div>
+              <div class="reviews-stars" id="reviews-avg-stars">☆☆☆☆☆</div>
+              <div class="muted" id="reviews-total-count">0 đánh giá</div>
+            </div>
+          </div>
+        </div>
+
+        <div id="review-action-area" class="review-action-area"></div>
+
+        <div id="reviews-list" class="reviews-list">
+          <p class="empty">Đang tải đánh giá...</p>
+        </div>
       </section>
 
       <h2 class="related-title">Sản phẩm liên quan</h2>
