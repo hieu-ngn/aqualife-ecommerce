@@ -190,6 +190,14 @@ def test_m09b_verified_purchase_reviews(client):
         assert list_data["total_reviews"] >= 1
         assert any(r["id"] == review_id for r in list_data["reviews"])
 
+        # 6b. Featured reviews on home page -> sorted by rating DESC, created_at ASC
+        feat_rev = client.get("/api/reviews?limit=20")
+        assert feat_rev.status_code == 200
+        feat_data = feat_rev.get_json()["data"]
+        assert isinstance(feat_data, list) and len(feat_data) >= 1
+        ratings = [r["rating"] for r in feat_data]
+        assert ratings == sorted(ratings, reverse=True)
+
         # 7. Delete review -> 200
         del_rev = client.delete(f"/api/reviews/{review_id}")
         assert del_rev.status_code == 200
@@ -259,7 +267,7 @@ def test_m10_m11_m12_admin_dashboard_and_management(client):
         cat_id = cat_res.get_json()["data"]["id"]
         created_cats.append(cat_id)
 
-        # 3. M10 Product CRUD (including water_type environment classification)
+        # 3. M10 Product CRUD (including water_type environment classification & sizes pricing)
         prod_res = client.post(
             "/api/admin/products",
             json={
@@ -271,21 +279,38 @@ def test_m10_m11_m12_admin_dashboard_and_management(client):
                 "description": "Cá Koi Nhật Bản",
                 "image": "image/ocean-bg.svg",
                 "status": "active",
+                "sizes": [
+                    {"size": "Size S (10 - 15cm)", "price": 320000},
+                    {"size": "Size M (20 - 25cm)", "price": 450000},
+                    {"size": "Size L (30 - 35cm)", "price": 680000},
+                ],
             },
         )
         assert prod_res.status_code == 201
         prod_data = prod_res.get_json()["data"]
         assert prod_data["water_type"] == "Nước ngọt"
+        assert len(prod_data["sizes"]) == 3
+        assert prod_data["sizes"][2]["price"] == 680000
         new_prod_id = prod_data["id"]
         created_prods.append(new_prod_id)
 
         upd_prod_res = client.put(
             f"/api/admin/products/{new_prod_id}",
-            json={"price": 500000, "stock": 10, "water_type": "Nước lợ"},
+            json={
+                "price": 500000,
+                "stock": 10,
+                "water_type": "Nước lợ",
+                "sizes": [
+                    {"size": "Size M - Tiêu chuẩn", "price": 500000},
+                    {"size": "Size XL - Jumbo", "price": 850000},
+                ],
+            },
         )
         assert upd_prod_res.status_code == 200
         assert upd_prod_res.get_json()["data"]["price"] == 500000
         assert upd_prod_res.get_json()["data"]["water_type"] == "Nước lợ"
+        assert len(upd_prod_res.get_json()["data"]["sizes"]) == 2
+        assert upd_prod_res.get_json()["data"]["sizes"][1]["price"] == 850000
 
         del_prod_res = client.delete(f"/api/admin/products/{new_prod_id}")
         assert del_prod_res.status_code == 200
@@ -346,6 +371,24 @@ def test_m10_m11_m12_admin_dashboard_and_management(client):
         )
         assert lock_cust.status_code == 200
         assert lock_cust.get_json()["data"]["status"] == "inactive"
+
+        # 6. Admin Contact Settings & Store Info Synchronization
+        orig_info = client.get("/api/store-info").get_json()["data"]
+        upd_set_res = client.put(
+            "/api/admin/settings",
+            json={
+                "phone": "0988 999 888",
+                "address": "207 Đ. Giải Phóng, Đồng Tâm, Hai Bà Trưng, Hà Nội",
+                "email": "admin@aqualife.com",
+                "open_hours": "08:00 – 23:59 (T2 – CN)",
+            },
+        )
+        assert upd_set_res.status_code == 200
+        public_info = client.get("/api/store-info").get_json()["data"]
+        assert public_info["phone"] == "0988 999 888"
+
+        # Restore original store settings
+        client.put("/api/admin/settings", json=orig_info)
     finally:
         if product_id is not None and initial_stock is not None:
             with get_db_cursor(commit=True) as cur:
@@ -355,3 +398,21 @@ def test_m10_m11_m12_admin_dashboard_and_management(client):
                 )
         ids_to_clean = [cust_id] + ([admin_id] if admin_id else [])
         _cleanup_user_data(ids_to_clean, created_prods, created_cats)
+
+
+def test_ai_tank_builder_advisor(client):
+    res = client.post(
+        "/api/advisor/chat",
+        json={"message": "500k nước mặn nên build bể cá như thế nào (gồm cá, ốc, tép, san hô)?"},
+    )
+    assert res.status_code == 200
+    data = res.get_json()["data"]
+    assert data["budget"] == 500000
+    assert data["water_type"] == "Nước mặn"
+    assert 0 < data["total_cost"] <= 500000
+    assert len(data["items"]) >= 3
+    species_in_combo = {item["species"] for item in data["items"]}
+    assert "Cá" in species_in_combo
+    assert "Ốc" in species_in_combo
+
+

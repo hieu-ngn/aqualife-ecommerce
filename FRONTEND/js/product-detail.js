@@ -27,7 +27,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     imageEl.src = product.image;
     imageEl.alt = product.name;
     nameEl.textContent = product.name;
-    priceEl.textContent = Aqualife.formatCurrency(product.price);
     speciesEl.textContent = product.species || "Chưa có thông tin";
     const stockInfo =
       typeof product.stock === "number"
@@ -37,6 +36,45 @@ document.addEventListener("DOMContentLoaded", async () => {
         : "";
     waterTypeEl.textContent = `${product.waterType || "Chưa có thông tin"}${stockInfo}`;
     descEl.textContent = product.description;
+
+    const sizesList =
+      Array.isArray(product.sizes) && product.sizes.length
+        ? product.sizes
+        : [{ size: "Size Tiêu chuẩn", price: product.price }];
+
+    let selectedSize = Aqualife.getProductSelectedSize
+      ? Aqualife.getProductSelectedSize(product)
+      : sizesList[0].size;
+
+    const sizeOptionsEl = document.getElementById("detail-size-options");
+    function renderSizeOptions() {
+      const currentOpt =
+        sizesList.find((s) => s.size === selectedSize) || sizesList[0];
+      selectedSize = currentOpt.size;
+      priceEl.textContent = Aqualife.formatCurrency(currentOpt.price);
+
+      if (!sizeOptionsEl) return;
+      sizeOptionsEl.innerHTML = sizesList
+        .map(
+          (opt) => `
+          <button type="button" class="size-option-btn ${
+            opt.size === selectedSize ? "active" : ""
+          }" data-size="${escapeHtml(opt.size)}">
+            <span class="size-opt-name">${escapeHtml(opt.size)}</span>
+            <span class="size-opt-price">${Aqualife.formatCurrency(opt.price)}</span>
+          </button>
+        `
+        )
+        .join("");
+
+      sizeOptionsEl.querySelectorAll(".size-option-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          selectedSize = btn.dataset.size;
+          renderSizeOptions();
+        });
+      });
+    }
+    renderSizeOptions();
 
     if (typeof product.stock === "number") {
       if (product.stock <= 0) {
@@ -51,7 +89,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     addBtn.addEventListener("click", () => {
       const qty = Math.max(1, Number(quantityEl.value || 1));
-      const ok = Aqualife.addToCart(product.id, qty);
+      const ok = Aqualife.addToCart(product.id, qty, selectedSize);
       if (ok) {
         quantityEl.value = "1";
         const originalText = addBtn.textContent;

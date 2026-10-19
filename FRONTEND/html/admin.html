@@ -617,35 +617,103 @@
           </div>
           <div class="adm-page-header">
             <div class="adm-title-group">
-              <h1>Cài đặt Hệ thống Aqualife</h1>
+              <h1>Cài đặt Hệ thống & Thông tin Liên hệ Admin</h1>
+              <p>Mọi thay đổi bên dưới sẽ tự động cập nhật trực tiếp lên 4 thẻ thông tin tại trang Liên hệ (<code>contact.html</code>) và Hồ sơ Admin.</p>
+            </div>
+            <div class="adm-header-actions">
+              <a href="contact.html" class="btn-adm-outline" target="_blank">
+                <i class="fa-solid fa-arrow-up-right-from-square"></i> Xem Trang Liên hệ
+              </a>
             </div>
           </div>
 
           <div class="grid grid-2">
             <div class="adm-table-card" style="padding:24px;">
-              <h3 style="margin-top:0;color:#01579b;">Thông tin Trại & Cửa hàng</h3>
-              <div class="field-group">
-                <label><strong>Tên thương hiệu</strong></label>
-                <input class="adm-input" type="text" value="Aqualife - The Oceanic Curator" readonly />
-              </div>
-              <div class="field-group">
-                <label><strong>Địa chỉ Showroom</strong></label>
-                <input class="adm-input" type="text" value="207 Đ. Giải Phóng, Đồng Tâm, Bạch Mai, Hà Nội" readonly />
-              </div>
-              <div class="field-group">
-                <label><strong>Hotline Kỹ thuật & Bảo hành sống</strong></label>
-                <input class="adm-input" type="text" value="086 781 7946 | info@aqualife.com" readonly />
-              </div>
-              <div style="display:flex;gap:10px;margin-top:16px;">
-                <a href="profile.html" class="btn-adm-primary">Cập nhật Hồ sơ Cá nhân Admin</a>
-                <a href="home.html" class="btn-adm-outline">Mở Trang chủ Khách hàng</a>
-              </div>
+              <h3 style="margin-top:0;color:#01579b;">
+                <i class="fa-solid fa-address-card"></i> Cập nhật 4 Thẻ Liên hệ theo Admin
+              </h3>
+              <form id="admin-store-settings-form">
+                <div class="field-group" style="margin-bottom:14px;">
+                  <label><strong>1. Địa chỉ Showroom & Studio (Địa chỉ Admin) *</strong></label>
+                  <input id="set-store-address" class="adm-input" type="text" placeholder="VD: 207 Đ. Giải Phóng, Đồng Tâm, Hai Bà Trưng, Hà Nội" required />
+                </div>
+                <div class="field-group" style="margin-bottom:14px;">
+                  <label><strong>Ghi chú địa điểm / Cơ sở</strong></label>
+                  <input id="set-store-address-sub" class="adm-input" type="text" placeholder="VD: Trường ĐH Kinh tế Quốc dân (NEU)" />
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+                  <div class="field-group">
+                    <label><strong>2. Số điện thoại Admin (Hotline & Zalo 24/7) *</strong></label>
+                    <input id="set-store-phone" class="adm-input" type="text" placeholder="VD: 086 781 7946" required />
+                  </div>
+                  <div class="field-group">
+                    <label><strong>Ghi chú dưới Hotline</strong></label>
+                    <input id="set-store-hotline-sub" class="adm-input" type="text" placeholder="VD: Hỗ trợ khẩn cấp & tư vấn kỹ thuật" />
+                  </div>
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+                  <div class="field-group">
+                    <label><strong>3. Hộp thư Điện tử (Email Admin) *</strong></label>
+                    <input id="set-store-email" class="adm-input" type="email" placeholder="VD: admin@aqualife.com" required />
+                  </div>
+                  <div class="field-group">
+                    <label><strong>Ghi chú dưới Email</strong></label>
+                    <input id="set-store-email-sub" class="adm-input" type="text" placeholder="VD: Phản hồi nhanh trong vòng 2 giờ" />
+                  </div>
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px;">
+                  <div class="field-group">
+                    <label><strong>4. Giờ Mở Cửa *</strong></label>
+                    <input id="set-store-hours" class="adm-input" type="text" placeholder="VD: 08:00 – 23:59 (T2 – CN)" required />
+                  </div>
+                  <div class="field-group">
+                    <label><strong>Ghi chú dưới Giờ mở cửa</strong></label>
+                    <input id="set-store-hours-sub" class="adm-input" type="text" placeholder="VD: Hoạt động xuyên lễ & cuối tuần" />
+                  </div>
+                </div>
+
+                <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                  <button type="submit" class="btn-adm-primary">
+                    <i class="fa-solid fa-floppy-disk"></i> Lưu & Đồng bộ lên Trang Liên hệ
+                  </button>
+                  <a href="profile.html" class="btn-adm-outline">Hồ sơ Cá nhân Admin</a>
+                </div>
+              </form>
             </div>
 
             <div class="adm-table-card" style="padding:24px;">
+              <h3 style="margin-top:0;color:#01579b;">
+                <i class="fa-solid fa-eye"></i> Xem trước 4 Thẻ Liên hệ Hiện tại
+              </h3>
+              <div id="admin-contact-preview-box" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
+                <div style="padding:14px;border:1px solid #e0f2fe;border-radius:12px;background:#f8fafc;">
+                  <div style="font-size:12px;color:#0284c7;font-weight:700;">📍 Showroom & Studio</div>
+                  <div id="prev-store-address" style="font-weight:700;color:#0f172a;margin-top:4px;font-size:13.5px;">207 Đ. Giải Phóng, Đồng Tâm, Hai Bà Trưng, Hà Nội</div>
+                  <div id="prev-store-address-sub" style="font-size:12px;color:#64748b;margin-top:2px;">Trường ĐH Kinh tế Quốc dân (NEU)</div>
+                </div>
+                <div style="padding:14px;border:1px solid #ccfbf1;border-radius:12px;background:#f8fafc;">
+                  <div style="font-size:12px;color:#0d9488;font-weight:700;">📞 Hotline & Zalo 24/7</div>
+                  <div id="prev-store-phone" style="font-weight:700;color:#0f172a;margin-top:4px;font-size:13.5px;">086 781 7946</div>
+                  <div id="prev-store-hotline-sub" style="font-size:12px;color:#64748b;margin-top:2px;">Hỗ trợ khẩn cấp & tư vấn kỹ thuật</div>
+                </div>
+                <div style="padding:14px;border:1px solid #f3e8ff;border-radius:12px;background:#f8fafc;">
+                  <div style="font-size:12px;color:#7e22ce;font-weight:700;">✉️ Hộp thư Điện tử</div>
+                  <div id="prev-store-email" style="font-weight:700;color:#0f172a;margin-top:4px;font-size:13.5px;">admin@aqualife.com</div>
+                  <div id="prev-store-email-sub" style="font-size:12px;color:#64748b;margin-top:2px;">Phản hồi nhanh trong vòng 2 giờ</div>
+                </div>
+                <div style="padding:14px;border:1px solid #fef3c7;border-radius:12px;background:#f8fafc;">
+                  <div style="font-size:12px;color:#d97706;font-weight:700;">🕒 Giờ Mở Cửa</div>
+                  <div id="prev-store-hours" style="font-weight:700;color:#0f172a;margin-top:4px;font-size:13.5px;">08:00 – 23:59 (T2 – CN)</div>
+                  <div id="prev-store-hours-sub" style="font-size:12px;color:#64748b;margin-top:2px;">Hoạt động xuyên lễ & cuối tuần</div>
+                </div>
+              </div>
+
               <h3 style="margin-top:0;color:#01579b;">Trạng thái Kết nối Cơ sở dữ liệu</h3>
               <p><strong>Hệ quản trị:</strong> PostgreSQL (pgAdmin 4 - Database <code>aqualife</code>)</p>
-              <p><strong>Chế độ:</strong> Unified Flask Server + Transactional Row Locking (<code>FOR UPDATE</code>)</p>
+              <p><strong>Chế độ đồng bộ:</strong> Đồng bộ 2 chiều giữa Hồ sơ Admin (<code>users</code>), Cài đặt Hệ thống (<code>store_settings</code>) và Trang Liên hệ (<code>contact.html</code>)</p>
               <p><strong>Ngưỡng cảnh báo sắp hết hàng:</strong> ≤ 5 cá thể / loài</p>
             </div>
           </div>
@@ -681,13 +749,27 @@
         </div>
         <div class="field-grid">
           <div class="field-group">
-            <label for="prod-form-price"><strong>Đơn giá niêm yết (VNĐ) *</strong></label>
+            <label for="prod-form-price"><strong>Đơn giá cơ bản / Size nhỏ nhất (VNĐ) *</strong></label>
             <input id="prod-form-price" class="adm-input" type="number" min="0" step="1000" required placeholder="350000" />
           </div>
           <div class="field-group">
             <label for="prod-form-stock"><strong>Tồn kho sinh thái (Cá thể) *</strong></label>
             <input id="prod-form-stock" class="adm-input" type="number" min="0" step="1" required placeholder="25" />
           </div>
+        </div>
+        <div class="field-group prod-sizes-builder">
+          <div class="prod-sizes-header">
+            <label><strong>📏 Phân loại Kích thước & Giá từng kích thước</strong></label>
+            <div class="prod-sizes-actions">
+              <button type="button" id="btn-auto-size-rows" class="btn-row-icon" title="Tự chia 3 Size S/M/L theo đơn giá cơ bản">
+                ⚡ Tự chia 3 Size
+              </button>
+              <button type="button" id="btn-add-size-row" class="btn-row-icon">
+                + Thêm kích thước
+              </button>
+            </div>
+          </div>
+          <div id="prod-sizes-list" class="prod-sizes-list"></div>
         </div>
         <div class="field-grid">
           <div class="field-group">

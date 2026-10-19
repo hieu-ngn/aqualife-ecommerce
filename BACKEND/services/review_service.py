@@ -27,11 +27,36 @@ def _serialize_review(row):
         "user_id": row["user_id"],
         "user_name": row.get("user_name") or "Khách hàng",
         "product_id": row["product_id"],
+        "product_name": row.get("product_name") or "Sản phẩm Aqualife",
         "rating": int(row["rating"]),
         "comment": row.get("comment") or "",
         "created_at": row["created_at"].isoformat() if row.get("created_at") else None,
         "updated_at": row["updated_at"].isoformat() if row.get("updated_at") else None,
     }
+
+
+def list_featured_reviews(limit: int = 20) -> list[dict]:
+    """Lấy danh sách đánh giá sản phẩm từ khách hàng: ưu tiên nhiều sao nhất trước (rating DESC),
+    cùng số sao thì đánh giá sớm nhất trước (created_at ASC, id ASC)."""
+    with get_db_cursor() as cur:
+        cur.execute(
+            """
+            SELECT r.id, r.user_id, u.name AS user_name,
+                   r.product_id, p.name AS product_name,
+                   r.rating, r.comment,
+                   r.created_at, r.updated_at
+            FROM reviews r
+            JOIN users u ON u.id = r.user_id
+            JOIN products p ON p.id = r.product_id
+            WHERE COALESCE(TRIM(r.comment), '') != ''
+            ORDER BY r.rating DESC, r.created_at ASC, r.id ASC
+            LIMIT %s
+            """,
+            (limit,),
+        )
+        rows = cur.fetchall()
+        return [_serialize_review(r) for r in rows]
+
 
 
 def user_has_purchased_product(cur, user_id: int, product_id: int) -> bool:

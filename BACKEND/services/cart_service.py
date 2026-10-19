@@ -54,12 +54,15 @@ def _fetch_cart_payload(cur, cart_id: int, user_id: int) -> dict:
         SELECT ci.id,
                ci.product_id,
                ci.quantity,
+               ci.selected_size,
+               ci.unit_price,
                p.name,
                p.price,
+               p.sizes,
                p.stock,
                p.image,
                p.status,
-               (p.price * ci.quantity) AS subtotal
+               (COALESCE(ci.unit_price, p.price) * ci.quantity) AS subtotal
         FROM cart_items ci
         JOIN products p ON p.id = ci.product_id
         WHERE ci.cart_id = %s
@@ -73,6 +76,7 @@ def _fetch_cart_payload(cur, cart_id: int, user_id: int) -> dict:
     total_quantity = 0
 
     for r in rows:
+        effective_price = r.get("unit_price") if r.get("unit_price") is not None else r["price"]
         subtotal = r["subtotal"] or Decimal("0")
         total_amount += subtotal
         total_quantity += r["quantity"]
@@ -81,7 +85,8 @@ def _fetch_cart_payload(cur, cart_id: int, user_id: int) -> dict:
                 "id": r["id"],
                 "product_id": r["product_id"],
                 "name": r["name"],
-                "price": _serialize_number(r["price"]),
+                "selected_size": r.get("selected_size") or "",
+                "price": _serialize_number(effective_price),
                 "stock": r["stock"],
                 "image": r.get("image"),
                 "status": r["status"],
@@ -105,7 +110,14 @@ def get_cart(user_id: int) -> dict:
         return _fetch_cart_payload(cur, cart_id, user_id)
 
 
-def add_to_cart(user_id: int, product_id: int, quantity: int) -> dict:
+def add_to_cart(
+    user_id: int,
+    product_id: int,
+    quantity: int,
+    selected_size: str | None = None,
+) -> dict:
+    from services.product_service import resolve_size_price
+
     if quantity <= 0:
         raise ValueError("Số lượng phải lớn hơn 0")
 
@@ -114,7 +126,7 @@ def add_to_cart(user_id: int, product_id: int, quantity: int) -> dict:
 
         cur.execute(
             """
-            SELECT id, name, price, stock, status
+            SELECT id, name, price, sizes, stock, status
             FROM products
             WHERE id = %s
             FOR UPDATE
@@ -125,9 +137,11 @@ def add_to_cart(user_id: int, product_id: int, quantity: int) -> dict:
         if not product or product["status"] != "active":
             raise ProductNotFoundError()
 
+        resolved_size, resolved_price = resolve_size_price(product, selected_size)
+
         cur.execute(
             """
-            SELECT id, quantity
+            SELECT id, quantity, selected_size, unit_price
             FROM cart_items
             WHERE cart_id = %s AND product_id = %s
             """,
@@ -140,14 +154,20 @@ def add_to_cart(user_id: int, product_id: int, quantity: int) -> dict:
         if new_qty > product["stock"]:
             raise InsufficientStockError(product["name"], product["stock"])
 
+        final_size = resolved_size if resolved_size else (existing.get("selected_size") or "" if existing else "")
+        final_price = resolved_price if resolved_size or not existing or existing.get("unit_price") is None else existing["unit_price"]
+
         cur.execute(
             """
-            INSERT INTO cart_items (cart_id, product_id, quantity)
-            VALUES (%s, %s, %s)
+            INSERT INTO cart_items (cart_id, product_id, quantity, selected_size, unit_price)
+            VALUES (%s, %s, %s, %s, %s)
             ON CONFLICT (cart_id, product_id)
-            DO UPDATE SET quantity = EXCLUDED.quantity
+            DO UPDATE SET
+                quantity = EXCLUDED.quantity,
+                selected_size = EXCLUDED.selected_size,
+                unit_price = EXCLUDED.unit_price
             """,
-            (cart_id, product_id, new_qty),
+            (cart_id, product_id, new_qty, final_size, final_price),
         )
         cur.execute("UPDATE cart SET updated_at = NOW() WHERE id = %s", (cart_id,))
         return _fetch_cart_payload(cur, cart_id, user_id)

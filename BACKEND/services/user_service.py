@@ -56,6 +56,20 @@ def update_profile(user_id: int, name: str, phone: str | None, address: str | No
             (name, phone or None, address or None, user_id),
         )
         row = cur.fetchone()
+        if row and row["role"] == "admin":
+            from services.dashboard_service import _ensure_store_settings_table
+
+            _ensure_store_settings_table(cur)
+            cur.execute(
+                """
+                UPDATE store_settings
+                SET phone = COALESCE(%s, phone),
+                    address = COALESCE(%s, address),
+                    updated_at = NOW()
+                WHERE id = 1
+                """,
+                (phone or None, address or None),
+            )
     if not row:
         raise UserNotFoundError()
     return _serialize_user(row)

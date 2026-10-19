@@ -73,6 +73,9 @@ document.addEventListener("DOMContentLoaded", async () => {
           body: JSON.stringify({ name, phone, address }),
         });
         renderProfile(updated);
+        if (updated.role === "admin") {
+          localStorage.removeItem("aqualife_store_info_v1");
+        }
         showAlert(profileAlert, "success", "Đã cập nhật hồ sơ cá nhân thành công!");
         if (window.Aqualife.showToast) {
           window.Aqualife.showToast("Cập nhật hồ sơ thành công!", "success");

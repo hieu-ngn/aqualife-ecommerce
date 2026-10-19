@@ -324,7 +324,49 @@
 .author span{
   display:block;
   font-size:13px;
-  opacity:0.7;
+  opacity:0.75;
+  margin-top:4px;
 }
 
+.author a.review-product-link{
+  color:inherit;
+  text-decoration:underline;
+  text-underline-offset:3px;
+}
 
+.testimonial-controls{
+  margin-top:32px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:16px;
+}
+
+.testimonial-nav-btn{
+  background:#fff;
+  color:#0b6aa2;
+  border:1px solid #cbd5e1;
+  padding:8px 18px;
+  border-radius:999px;
+  font-size:14px;
+  font-weight:600;
+  cursor:pointer;
+  transition:0.2s;
+}
+
+.testimonial-nav-btn:hover:not(:disabled){
+  background:#0b6aa2;
+  color:#fff;
+  border-color:#0b6aa2;
+}
+
+.testimonial-nav-btn:disabled{
+  opacity:0.45;
+  cursor:not-allowed;
+}
+
+.testimonial-page-info{
+  font-size:14px;
+  color:#475569;
+  font-weight:600;
+}

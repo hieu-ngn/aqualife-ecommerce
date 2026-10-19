@@ -1069,6 +1069,76 @@ body.admin-body {
   color: #01579b;
 }
 
+.prod-sizes-builder {
+  background: #f4f9fd;
+  border: 1px solid #d5e8f6;
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+}
+
+.prod-sizes-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.prod-sizes-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.prod-sizes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.prod-size-row {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.btn-remove-size-row {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  width: 34px;
+  height: 36px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-remove-size-row:hover {
+  background: #fecaca;
+}
+
+.size-price-pills {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 5px;
+}
+
+.size-price-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  color: #0369a1;
+}
+
 @media (max-width: 1120px) {
   .adm-kpi-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));

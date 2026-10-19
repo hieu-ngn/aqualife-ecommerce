@@ -59,6 +59,7 @@ CREATE TABLE products (
     stock           INTEGER NOT NULL DEFAULT 0 CHECK (stock >= 0),
     image           TEXT,
     water_type      VARCHAR(50) NOT NULL DEFAULT 'Nước ngọt',
+    sizes           JSONB NOT NULL DEFAULT '[]'::jsonb,
     status          VARCHAR(20) NOT NULL DEFAULT 'active'
                         CHECK (status IN ('active', 'inactive')),
     created_at      TIMESTAMP NOT NULL DEFAULT NOW(),
@@ -87,6 +88,8 @@ CREATE TABLE cart_items (
     cart_id         BIGINT NOT NULL REFERENCES cart(id) ON DELETE CASCADE,
     product_id      BIGINT NOT NULL REFERENCES products(id),
     quantity        INTEGER NOT NULL CHECK (quantity > 0),
+    selected_size   VARCHAR(100) NOT NULL DEFAULT '',
+    unit_price      NUMERIC(12, 2),
     UNIQUE (cart_id, product_id)
 );
 

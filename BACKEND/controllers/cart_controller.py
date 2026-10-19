@@ -18,6 +18,7 @@ def add_to_cart():
 
     product_id = body.get("product_id")
     quantity = body.get("quantity", 1)
+    selected_size = str(body.get("selected_size") or body.get("size") or "").strip()
 
     try:
         product_id = int(product_id)
@@ -29,7 +30,9 @@ def add_to_cart():
         return error("Số lượng sản phẩm phải lớn hơn 0", 422)
 
     try:
-        data = cart_service.add_to_cart(g.current_user["id"], product_id, quantity)
+        data = cart_service.add_to_cart(
+            g.current_user["id"], product_id, quantity, selected_size=selected_size
+        )
     except cart_service.ProductNotFoundError:
         return error("Product not found", 404)
     except cart_service.InsufficientStockError as exc:
