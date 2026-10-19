@@ -218,6 +218,76 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
+  // 7. Đồng bộ 4 thẻ thông tin liên hệ theo thông tin Admin
+  async function loadAdminContactInfo() {
+    let info = null;
+    try {
+      const cached = localStorage.getItem("aqualife_store_info_v1");
+      if (cached) info = JSON.parse(cached);
+    } catch {
+      info = null;
+    }
+
+    if (window.Aqualife && window.Aqualife.apiFetch) {
+      try {
+        const fresh = await window.Aqualife.apiFetch("/store-info");
+        if (fresh) {
+          info = fresh;
+          localStorage.setItem("aqualife_store_info_v1", JSON.stringify(fresh));
+        }
+      } catch {
+        // Giữ dữ liệu cache hoặc mặc định
+      }
+    }
+
+    if (!info) return;
+
+    const setText = (id, val) => {
+      const el = document.getElementById(id);
+      if (el && val) el.textContent = val;
+    };
+
+    // Thẻ 1: Showroom & Studio (Địa chỉ Admin)
+    setText("contact-studio-title", info.studio_title);
+    setText("contact-address", info.address);
+    setText("contact-address-sub", info.address_sub);
+
+    // Thẻ 2: Hotline & Zalo 24/7 (Số điện thoại Admin)
+    setText("contact-hotline-title", info.hotline_title);
+    const phoneLink = document.getElementById("contact-phone-link");
+    if (phoneLink && info.phone) {
+      phoneLink.textContent = info.phone;
+      phoneLink.href = `tel:${String(info.phone).replace(/\s+/g, "")}`;
+    }
+    setText("contact-hotline-sub", info.hotline_sub);
+
+    // Thẻ 3: Hộp thư Điện tử (Email Admin)
+    setText("contact-email-title", info.email_title);
+    const emailLink = document.getElementById("contact-email-link");
+    if (emailLink && info.email) {
+      emailLink.textContent = info.email;
+      emailLink.href = `mailto:${info.email}`;
+    }
+    setText("contact-email-sub", info.email_sub);
+
+    // Thẻ 4: Giờ Mở Cửa
+    setText("contact-hours-title", info.hours_title);
+    setText("contact-hours", info.open_hours);
+    setText("contact-hours-sub", info.open_hours_sub);
+
+    // Bản đồ & Footer
+    setText("contact-map-address", info.address);
+    const mapLink = document.getElementById("contact-map-link");
+    if (mapLink && info.address) {
+      mapLink.href = `https://maps.google.com/?q=${encodeURIComponent(info.address)}`;
+    }
+    setText("footer-store-address", info.address);
+    setText("footer-store-phone", info.phone);
+    setText("footer-store-email", info.email);
+  }
+
+  await loadAdminContactInfo();
   await prefillContactUser();
   renderRecentContacts();
 });
+

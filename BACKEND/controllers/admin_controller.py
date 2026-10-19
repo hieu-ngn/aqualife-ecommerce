@@ -150,6 +150,7 @@ def create_product():
     description = str(body.get("description") or "").strip()
     image = str(body.get("image") or "").strip() or "image/ocean-bg.svg"
     water_type = str(body.get("water_type") or body.get("waterType") or "Nước ngọt").strip()
+    sizes = body.get("sizes") if isinstance(body.get("sizes"), list) else None
     status = str(body.get("status") or "active").strip().lower()
     if status not in ("active", "inactive"):
         return error("Trạng thái sản phẩm không hợp lệ", 422)
@@ -164,6 +165,7 @@ def create_product():
             image=image,
             status=status,
             water_type=water_type,
+            sizes=sizes,
         )
         return success(product, 201)
     except dashboard_service.CategoryNotFoundError:
@@ -221,6 +223,8 @@ def update_product(product_id: int):
     elif "waterType" in body and body["waterType"] is not None:
         water_type = str(body["waterType"]).strip()
 
+    sizes = body.get("sizes") if "sizes" in body and isinstance(body.get("sizes"), list) else None
+
     status = (
         str(body["status"]).strip().lower()
         if "status" in body and body["status"] is not None
@@ -240,6 +244,7 @@ def update_product(product_id: int):
             image=image,
             status=status,
             water_type=water_type,
+            sizes=sizes,
         )
         return success(product)
     except ProductNotFoundError:
@@ -403,4 +408,25 @@ def bulk_update_products():
 @admin_required
 def get_revenue():
     return success(dashboard_service.get_revenue_report())
+
+
+def get_public_store_info():
+    return success(dashboard_service.get_store_settings())
+
+
+@admin_required
+def get_settings():
+    return success(dashboard_service.get_store_settings())
+
+
+@admin_required
+def update_settings():
+    body = request.get_json(silent=True) or {}
+    if not isinstance(body, dict):
+        return error("Dữ liệu gửi lên không hợp lệ", 400)
+
+    admin_id = g.current_user["id"] if getattr(g, "current_user", None) else None
+    updated = dashboard_service.admin_update_store_settings(admin_id, body)
+    return success(updated)
+
 

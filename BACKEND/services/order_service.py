@@ -86,17 +86,20 @@ def create_order(
         raise ValueError("Phương thức thanh toán không hợp lệ")
 
     with get_db_cursor(commit=True) as cur:
+        from services.product_service import resolve_size_price
+
         # 1. Read current cart from database
         cur.execute("SELECT id FROM cart WHERE user_id = %s", (user_id,))
         cart_row = cur.fetchone()
         cart_id = cart_row["id"] if cart_row else None
 
         requested_quantities: dict[int, int] = {}
+        requested_sizes: dict[int, str] = {}
 
         if cart_id is not None:
             cur.execute(
                 """
-                SELECT product_id, quantity
+                SELECT product_id, quantity, selected_size
                 FROM cart_items
                 WHERE cart_id = %s
                 ORDER BY product_id ASC
@@ -104,7 +107,10 @@ def create_order(
                 (cart_id,),
             )
             for row in cur.fetchall():
-                requested_quantities[int(row["product_id"])] = int(row["quantity"])
+                pid = int(row["product_id"])
+                requested_quantities[pid] = int(row["quantity"])
+                if row.get("selected_size"):
+                    requested_sizes[pid] = str(row["selected_size"])
 
         # Fallback to client-provided items if DB cart is empty
         if not requested_quantities and fallback_items:
@@ -113,6 +119,8 @@ def create_order(
                 qty = int(item["quantity"])
                 if qty > 0:
                     requested_quantities[pid] = requested_quantities.get(pid, 0) + qty
+                    if item.get("selected_size"):
+                        requested_sizes[pid] = str(item["selected_size"])
 
         if not requested_quantities:
             raise EmptyCartError("Giỏ hàng đang trống")
@@ -121,7 +129,7 @@ def create_order(
         product_ids = sorted(requested_quantities.keys())
         cur.execute(
             """
-            SELECT id, name, price, stock, status, image
+            SELECT id, name, price, sizes, stock, status, image
             FROM products
             WHERE id = ANY(%s)
             ORDER BY id ASC
@@ -144,14 +152,21 @@ def create_order(
             if product["stock"] < qty:
                 raise InsufficientStockError(product["name"], product["stock"])
 
-            unit_price = Decimal(str(product["price"]))
+            chosen_size = requested_sizes.get(pid, "")
+            resolved_size, unit_price = resolve_size_price(product, chosen_size)
             subtotal = unit_price * Decimal(qty)
             total_amount += subtotal
+
+            snap_name = (
+                f"{product['name']} ({resolved_size})"
+                if resolved_size
+                else product["name"]
+            )
 
             prepared_items.append(
                 {
                     "product_id": pid,
-                    "product_name": product["name"],
+                    "product_name": snap_name,
                     "unit_price": unit_price,
                     "quantity": qty,
                     "subtotal": subtotal,

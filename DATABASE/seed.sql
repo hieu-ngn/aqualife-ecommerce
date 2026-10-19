@@ -124,6 +124,47 @@ UPDATE products SET water_type = 'Nước lợ' WHERE name IN (
     'Cá Bống Hiệp Sĩ', 'Cá Mập Colombia', 'Cá Bảy Màu', 'Cá Bống Rồng'
 ) OR description ILIKE '%nước lợ%';
 
+-- Phân loại Kích thước & Giá từng kích thước (sizes JSONB) cho toàn bộ sản phẩm mẫu
+UPDATE products p
+SET sizes = jsonb_build_array(
+    jsonb_build_object('size', 'Size S - Nhỏ (2 - 3cm)', 'price', p.price:: bigint),
+    jsonb_build_object('size', 'Size M - Trung (4 - 6cm)', 'price', (ROUND((p.price * 1.4) / 5000.0) * 5000)::bigint),
+    jsonb_build_object('size', 'Size L - Trưởng thành (7 - 10cm)', 'price', (ROUND((p.price * 1.85) / 5000.0) * 5000)::bigint)
+)
+WHERE category_id = (SELECT id FROM categories WHERE name = 'Cá cảnh');
+
+UPDATE products p
+SET sizes = jsonb_build_array(
+    jsonb_build_object('size', 'Size Nhỏ / Baby (0.8 - 1.2cm)', 'price', p.price::bigint),
+    jsonb_build_object('size', 'Size Trung (1.5 - 1.8cm)', 'price', (ROUND((p.price * 1.35) / 1000.0) * 1000)::bigint),
+    jsonb_build_object('size', 'Size Trưởng thành (2.0 - 2.5cm)', 'price', (ROUND((p.price * 1.75) / 1000.0) * 1000)::bigint)
+)
+WHERE category_id = (SELECT id FROM categories WHERE name = 'Tép cảnh');
+
+UPDATE products p
+SET sizes = jsonb_build_array(
+    jsonb_build_object('size', 'Size S - Nhỏ (1.0 - 1.5cm)', 'price', p.price::bigint),
+    jsonb_build_object('size', 'Size M - Trung (2.0 - 2.5cm)', 'price', (ROUND((p.price * 1.35) / 1000.0) * 1000)::bigint),
+    jsonb_build_object('size', 'Size L - Lớn (3.0cm+)', 'price', (ROUND((p.price * 1.7) / 1000.0) * 1000)::bigint)
+)
+WHERE category_id = (SELECT id FROM categories WHERE name = 'Ốc cảnh');
+
+UPDATE products p
+SET sizes = jsonb_build_array(
+    jsonb_build_object('size', 'Frag / Nhánh Nhỏ (Tiêu chuẩn)', 'price', p.price::bigint),
+    jsonb_build_object('size', 'Bụi Trung (3 - 4 đầu)', 'price', (ROUND((p.price * 1.45) / 5000.0) * 5000)::bigint),
+    jsonb_build_object('size', 'Colony / Bụi Lớn (5+ đầu)', 'price', (ROUND((p.price * 2.0) / 5000.0) * 5000)::bigint)
+)
+WHERE category_id = (SELECT id FROM categories WHERE name = 'Thủy sinh & San hô');
+
+UPDATE products p
+SET sizes = jsonb_build_array(
+    jsonb_build_object('size', 'Bản Nhỏ / Tiêu chuẩn', 'price', p.price::bigint),
+    jsonb_build_object('size', 'Bản Trung', 'price', (ROUND((p.price * 1.5) / 5000.0) * 5000)::bigint),
+    jsonb_build_object('size', 'Bản Lớn / Cao cấp', 'price', (ROUND((p.price * 2.1) / 5000.0) * 5000)::bigint)
+)
+WHERE sizes = '[]'::jsonb;
+
 -- ------------------------------------------------------------
 -- sample completed order for khach1 (so dashboard/revenue has data)
 -- ------------------------------------------------------------
@@ -163,10 +204,32 @@ WHERE o.user_id = (SELECT id FROM users WHERE email = 'khach2@aqualife.com')
 LIMIT 1;
 
 -- ------------------------------------------------------------
--- sample review
+-- sample reviews (sorted by highest rating first, earliest first)
 -- ------------------------------------------------------------
-INSERT INTO reviews (user_id, product_id, rating, comment)
-SELECT (SELECT id FROM users WHERE email = 'khach1@aqualife.com'), p.id, 5, 'Cá khỏe, giao hàng nhanh, đóng gói cẩn thận.'
+INSERT INTO users (name, email, password_hash, phone, address, role) VALUES
+('Anh Hoàng Dương', 'hoangduong@aqualife.com', 'scrypt:32768:8:1$seed$seed', '0901112233', 'Quận 1, TP.HCM', 'customer'),
+('Chị Hồng Diệp', 'hongdiep@aqualife.com', 'scrypt:32768:8:1$seed$seed', '0902223344', 'Cầu Giấy, Hà Nội', 'customer'),
+('Anh Minh Tuấn', 'minhtuan@aqualife.com', 'scrypt:32768:8:1$seed$seed', '0903334455', 'Hải Châu, Đà Nẵng', 'customer'),
+('Chị Thanh Thảo', 'thanhthao@aqualife.com', 'scrypt:32768:8:1$seed$seed', '0904445566', 'Tây Hồ, Hà Nội', 'customer')
+ON CONFLICT (email) DO NOTHING;
+
+INSERT INTO reviews (user_id, product_id, rating, comment, created_at)
+SELECT (SELECT id FROM users WHERE email = 'hoangduong@aqualife.com'), p.id, 5, 'Chưa bao giờ tôi nhận được những chú cá khỏe mạnh và màu sắc tuyệt vời như vậy khi mua online. Aqualife thực sự là nơi uy tín nhất.', NOW() - INTERVAL '10 days'
+FROM products p WHERE p.name = 'Cá Hề Ocellaris' LIMIT 1;
+
+INSERT INTO reviews (user_id, product_id, rating, comment, created_at)
+SELECT (SELECT id FROM users WHERE email = 'hongdiep@aqualife.com'), p.id, 5, 'Dịch vụ thiết kế bể cá biển của Aqualife đã biến phòng khách của tôi thành một thủy cung thu nhỏ đầy nghệ thuật. Đội ngũ kỹ thuật rất tận tâm.', NOW() - INTERVAL '9 days'
+FROM products p WHERE p.name = 'San hô Torch' LIMIT 1;
+
+INSERT INTO reviews (user_id, product_id, rating, comment, created_at)
+SELECT (SELECT id FROM users WHERE email = 'khach1@aqualife.com'), p.id, 5, 'Cá khỏe, giao hàng nhanh, đóng gói cẩn thận.', NOW() - INTERVAL '7 days'
 FROM products p WHERE p.name = 'Cá Vàng Đầu Lân' LIMIT 1;
 
-select * from products
+INSERT INTO reviews (user_id, product_id, rating, comment, created_at)
+SELECT (SELECT id FROM users WHERE email = 'minhtuan@aqualife.com'), p.id, 5, 'Cá Blue Tang về bể bơi rất sung, ăn cám ngay ngày đầu tiên. Đóng gói oxy 3 lớp cực kỳ chuyên nghiệp!', NOW() - INTERVAL '5 days'
+FROM products p WHERE p.name = 'Cá Blue Tang' LIMIT 1;
+
+INSERT INTO reviews (user_id, product_id, rating, comment, created_at)
+SELECT (SELECT id FROM users WHERE email = 'thanhthao@aqualife.com'), p.id, 4, 'Tôm Bác Sĩ rất chăm dọn ký sinh, màu đỏ trắng nổi bật trong bể reef. Sẽ tiếp tục ủng hộ shop!', NOW() - INTERVAL '2 days'
+FROM products p WHERE p.name = 'Tôm Bác Sĩ' LIMIT 1;
+

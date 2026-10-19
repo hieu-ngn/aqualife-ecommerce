@@ -86,13 +86,19 @@ document.addEventListener("DOMContentLoaded", async () => {
         const product = Aqualife.findProductById(products, productId);
         if (!product) return "";
 
+        const selectedSize = Aqualife.getProductSelectedSize
+          ? Aqualife.getProductSelectedSize(product)
+          : "";
+        const unitPrice = Aqualife.getProductEffectivePrice
+          ? Aqualife.getProductEffectivePrice(product, selectedSize)
+          : product.price;
         const quantity = Number(qty);
-        const amount = product.price * quantity;
+        const amount = unitPrice * quantity;
         total += amount;
 
         return `
           <div class="order-item">
-            <div>${product.name} x ${quantity}</div>
+            <div>${product.name}${selectedSize ? ` <small class="muted">(${selectedSize})</small>` : ""} x ${quantity}</div>
             <div>${Aqualife.formatCurrency(amount)}</div>
           </div>
         `;
@@ -179,7 +185,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       .map(([rawId, qty]) => {
         const prod = Aqualife.findProductById(products, rawId);
         const pid = prod ? Number(prod.id) : Number(rawId);
-        return { product_id: pid, quantity: Number(qty) };
+        const selSize =
+          prod && Aqualife.getProductSelectedSize
+            ? Aqualife.getProductSelectedSize(prod)
+            : "";
+        return { product_id: pid, quantity: Number(qty), selected_size: selSize };
       })
       .filter((item) => Number.isInteger(item.product_id) && item.product_id > 0);
 

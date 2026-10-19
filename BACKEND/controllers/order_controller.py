@@ -54,7 +54,8 @@ def create_order():
                 return error("product_id và quantity phải là số nguyên", 422)
             if qty <= 0:
                 return error("Số lượng sản phẩm phải lớn hơn 0", 422)
-            fallback_items.append({"product_id": pid, "quantity": qty})
+            sel_size = str(entry.get("selected_size") or entry.get("size") or "").strip()
+            fallback_items.append({"product_id": pid, "quantity": qty, "selected_size": sel_size})
 
     try:
         order = order_service.create_order(

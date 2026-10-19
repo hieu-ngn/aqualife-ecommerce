@@ -1,3 +1,4 @@
+import json
 from decimal import Decimal
 from psycopg.errors import UniqueViolation
 from config.database import get_db_cursor
@@ -7,7 +8,7 @@ from services.order_service import (
     _fetch_order_items,
     _serialize_order,
 )
-from services.product_service import _serialize_category, _serialize_product
+from services.product_service import _normalize_sizes, _serialize_category, _serialize_product
 
 
 class CategoryNameExistsError(Exception):
@@ -273,7 +274,7 @@ def admin_list_products(
     where_clause = " AND ".join(conditions)
     query = f"""
         SELECT p.id, p.category_id, c.name AS category_name,
-               p.name, p.description, p.price, p.stock, p.image, p.water_type, p.status,
+               p.name, p.description, p.price, p.sizes, p.stock, p.image, p.water_type, p.status,
                p.created_at, p.updated_at
         FROM products p
         LEFT JOIN categories c ON c.id = p.category_id
@@ -295,6 +296,7 @@ def admin_create_product(
     image: str | None,
     status: str = "active",
     water_type: str = "Nước ngọt",
+    sizes: list[dict] | None = None,
 ) -> dict:
     with get_db_cursor(commit=True) as cur:
         if category_id is not None:
@@ -305,17 +307,22 @@ def admin_create_product(
         else:
             cat = None
 
+        normalized_sizes = _normalize_sizes(sizes, price)
+        if (price is None or price == 0) and normalized_sizes:
+            price = Decimal(str(normalized_sizes[0]["price"]))
+
         cur.execute(
             """
-            INSERT INTO products (category_id, name, description, price, stock, image, water_type, status)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-            RETURNING id, category_id, name, description, price, stock, image, water_type, status, created_at, updated_at
+            INSERT INTO products (category_id, name, description, price, sizes, stock, image, water_type, status)
+            VALUES (%s, %s, %s, %s, %s::jsonb, %s, %s, %s, %s)
+            RETURNING id, category_id, name, description, price, sizes, stock, image, water_type, status, created_at, updated_at
             """,
             (
                 category_id,
                 name,
                 description or "",
                 price,
+                json.dumps(normalized_sizes, ensure_ascii=False),
                 stock,
                 image or "image/ocean-bg.svg",
                 water_type or "Nước ngọt",
@@ -337,13 +344,14 @@ def admin_update_product(
     image: str | None = None,
     status: str | None = None,
     water_type: str | None = None,
+    sizes: list[dict] | None = None,
 ) -> dict:
     from services.cart_service import ProductNotFoundError
 
     with get_db_cursor(commit=True) as cur:
         cur.execute(
             """
-            SELECT id, category_id, name, description, price, stock, image, water_type, status
+            SELECT id, category_id, name, description, price, sizes, stock, image, water_type, status
             FROM products
             WHERE id = %s
             FOR UPDATE
@@ -371,6 +379,17 @@ def admin_update_product(
         new_water_type = water_type if water_type is not None else (existing.get("water_type") or "Nước ngọt")
         new_status = status if status is not None else existing["status"]
 
+        if sizes is not None:
+            new_sizes = _normalize_sizes(sizes, new_price)
+        elif price is not None and price != existing["price"]:
+            # If only price was updated without explicit sizes, scale or update first size
+            old_sizes = _normalize_sizes(existing.get("sizes"), existing["price"])
+            if old_sizes:
+                old_sizes[0]["price"] = int(new_price)
+            new_sizes = old_sizes
+        else:
+            new_sizes = _normalize_sizes(existing.get("sizes"), new_price)
+
         cur.execute(
             """
             UPDATE products
@@ -378,18 +397,20 @@ def admin_update_product(
                 name = %s,
                 description = %s,
                 price = %s,
+                sizes = %s::jsonb,
                 stock = %s,
                 image = %s,
                 water_type = %s,
                 status = %s
             WHERE id = %s
-            RETURNING id, category_id, name, description, price, stock, image, water_type, status, created_at, updated_at
+            RETURNING id, category_id, name, description, price, sizes, stock, image, water_type, status, created_at, updated_at
             """,
             (
                 new_cat_id,
                 new_name,
                 new_desc,
                 new_price,
+                json.dumps(new_sizes, ensure_ascii=False),
                 new_stock,
                 new_image,
                 new_water_type,
@@ -773,4 +794,213 @@ def get_revenue_report() -> dict:
             "by_category": by_category,
             "by_payment": by_payment,
         }
+
+
+# ============================================================
+# Store & Admin Contact Info Synchronization
+# ============================================================
+def _ensure_store_settings_table(cur) -> None:
+    cur.execute(
+        """
+        CREATE TABLE IF NOT EXISTS store_settings (
+            id              INTEGER      PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+            studio_title    VARCHAR(120) NOT NULL DEFAULT 'Showroom & Studio',
+            address         TEXT         NOT NULL DEFAULT '207 Đ. Giải Phóng, Đồng Tâm, Hai Bà Trưng, Hà Nội',
+            address_sub     VARCHAR(255) NOT NULL DEFAULT 'Trường ĐH Kinh tế Quốc dân (NEU)',
+            hotline_title   VARCHAR(120) NOT NULL DEFAULT 'Hotline & Zalo 24/7',
+            phone           VARCHAR(50)  NOT NULL DEFAULT '086 781 7946',
+            hotline_sub     VARCHAR(255) NOT NULL DEFAULT 'Hỗ trợ khẩn cấp & tư vấn kỹ thuật',
+            email_title     VARCHAR(120) NOT NULL DEFAULT 'Hộp thư Điện tử',
+            email           VARCHAR(255) NOT NULL DEFAULT 'admin@aqualife.com',
+            email_sub       VARCHAR(255) NOT NULL DEFAULT 'Phản hồi nhanh trong vòng 2 giờ',
+            hours_title     VARCHAR(120) NOT NULL DEFAULT 'Giờ Mở Cửa',
+            open_hours      VARCHAR(120) NOT NULL DEFAULT '08:00 – 23:59 (T2 – CN)',
+            open_hours_sub  VARCHAR(255) NOT NULL DEFAULT 'Hoạt động xuyên lễ & cuối tuần',
+            updated_at      TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+        )
+        """
+    )
+
+
+def get_store_settings() -> dict:
+    with get_db_cursor(commit=True) as cur:
+        _ensure_store_settings_table(cur)
+
+        cur.execute(
+            """
+            SELECT id, name, email, phone, address
+            FROM users
+            WHERE role = 'admin' AND status = 'active'
+            ORDER BY id ASC
+            LIMIT 1
+            """
+        )
+        admin_user = cur.fetchone()
+
+        cur.execute("SELECT * FROM store_settings WHERE id = 1")
+        settings = cur.fetchone()
+
+        default_phone = (
+            admin_user["phone"]
+            if admin_user and admin_user.get("phone") and admin_user["phone"] != "0900000000"
+            else "086 781 7946"
+        )
+        default_address = (
+            admin_user["address"]
+            if admin_user and admin_user.get("address") and admin_user["address"] != "Aqualife HQ, Ha Noi"
+            else "207 Đ. Giải Phóng, Đồng Tâm, Hai Bà Trưng, Hà Nội"
+        )
+        default_email = (
+            admin_user["email"] if admin_user and admin_user.get("email") else "admin@aqualife.com"
+        )
+
+        if not settings:
+            cur.execute(
+                """
+                INSERT INTO store_settings (id, address, phone, email)
+                VALUES (1, %s, %s, %s)
+                RETURNING *
+                """,
+                (default_address, default_phone, default_email),
+            )
+            settings = cur.fetchone()
+
+        if admin_user and (
+            admin_user.get("phone") in (None, "", "0900000000")
+            or admin_user.get("address") in (None, "", "Aqualife HQ, Ha Noi")
+        ):
+            cur.execute(
+                """
+                UPDATE users
+                SET phone = %s,
+                    address = %s
+                WHERE id = %s
+                RETURNING id, name, email, phone, address
+                """,
+                (
+                    settings["phone"] or default_phone,
+                    settings["address"] or default_address,
+                    admin_user["id"],
+                ),
+            )
+            admin_user = cur.fetchone()
+
+        effective_phone = (
+            admin_user["phone"]
+            if admin_user and admin_user.get("phone")
+            else settings["phone"]
+        )
+        effective_address = (
+            admin_user["address"]
+            if admin_user and admin_user.get("address")
+            else settings["address"]
+        )
+        effective_email = settings["email"] or (
+            admin_user["email"] if admin_user and admin_user.get("email") else "info@aqualife.com"
+        )
+
+        return {
+            "admin_id": admin_user["id"] if admin_user else None,
+            "admin_name": admin_user["name"] if admin_user else "Aqualife Admin",
+            "admin_email": admin_user["email"] if admin_user else effective_email,
+            "studio_title": settings["studio_title"],
+            "address": effective_address,
+            "address_sub": settings["address_sub"],
+            "hotline_title": settings["hotline_title"],
+            "phone": effective_phone,
+            "hotline_sub": settings["hotline_sub"],
+            "email_title": settings["email_title"],
+            "email": effective_email,
+            "email_sub": settings["email_sub"],
+            "hours_title": settings["hours_title"],
+            "open_hours": settings["open_hours"],
+            "open_hours_sub": settings["open_hours_sub"],
+            "updated_at": settings["updated_at"].isoformat() if settings.get("updated_at") else None,
+        }
+
+
+def admin_update_store_settings(admin_id: int, payload: dict) -> dict:
+    with get_db_cursor(commit=True) as cur:
+        _ensure_store_settings_table(cur)
+        current = get_store_settings()
+
+        studio_title = str(payload.get("studio_title") or current["studio_title"]).strip()
+        address = str(payload.get("address") or current["address"]).strip()
+        address_sub = str(payload.get("address_sub") or current["address_sub"]).strip()
+        hotline_title = str(payload.get("hotline_title") or current["hotline_title"]).strip()
+        phone = str(payload.get("phone") or current["phone"]).strip()
+        hotline_sub = str(payload.get("hotline_sub") or current["hotline_sub"]).strip()
+        email_title = str(payload.get("email_title") or current["email_title"]).strip()
+        email = str(payload.get("email") or current["email"]).strip()
+        email_sub = str(payload.get("email_sub") or current["email_sub"]).strip()
+        hours_title = str(payload.get("hours_title") or current["hours_title"]).strip()
+        open_hours = str(payload.get("open_hours") or current["open_hours"]).strip()
+        open_hours_sub = str(payload.get("open_hours_sub") or current["open_hours_sub"]).strip()
+        admin_name = str(payload.get("admin_name") or "").strip()
+
+        cur.execute(
+            """
+            INSERT INTO store_settings (
+                id, studio_title, address, address_sub,
+                hotline_title, phone, hotline_sub,
+                email_title, email, email_sub,
+                hours_title, open_hours, open_hours_sub, updated_at
+            )
+            VALUES (1, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW())
+            ON CONFLICT (id) DO UPDATE SET
+                studio_title = EXCLUDED.studio_title,
+                address = EXCLUDED.address,
+                address_sub = EXCLUDED.address_sub,
+                hotline_title = EXCLUDED.hotline_title,
+                phone = EXCLUDED.phone,
+                hotline_sub = EXCLUDED.hotline_sub,
+                email_title = EXCLUDED.email_title,
+                email = EXCLUDED.email,
+                email_sub = EXCLUDED.email_sub,
+                hours_title = EXCLUDED.hours_title,
+                open_hours = EXCLUDED.open_hours,
+                open_hours_sub = EXCLUDED.open_hours_sub,
+                updated_at = NOW()
+            """,
+            (
+                studio_title,
+                address,
+                address_sub,
+                hotline_title,
+                phone,
+                hotline_sub,
+                email_title,
+                email,
+                email_sub,
+                hours_title,
+                open_hours,
+                open_hours_sub,
+            ),
+        )
+
+        # Đồng bộ ngược lại vào tài khoản Admin trong bảng users
+        target_admin_id = admin_id or current.get("admin_id")
+        if target_admin_id:
+            if admin_name:
+                cur.execute(
+                    "UPDATE users SET name = %s, phone = %s, address = %s WHERE id = %s",
+                    (admin_name, phone, address, target_admin_id),
+                )
+            else:
+                cur.execute(
+                    "UPDATE users SET phone = %s, address = %s WHERE id = %s",
+                    (phone, address, target_admin_id),
+                )
+            # Đồng bộ cho cả tài khoản admin chính (id đầu tiên) nếu có nhiều admin
+            cur.execute(
+                """
+                UPDATE users
+                SET phone = %s, address = %s
+                WHERE id = (SELECT id FROM users WHERE role = 'admin' ORDER BY id ASC LIMIT 1)
+                """,
+                (phone, address),
+            )
+
+    return get_store_settings()
+
 

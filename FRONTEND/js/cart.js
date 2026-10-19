@@ -58,10 +58,34 @@ function renderCart(products) {
     .map(([id, qty]) => {
       const product = Aqualife.findProductById(products, id);
       if (!product) return "";
-      const subtotal = product.price * Number(qty);
+      const selectedSize = Aqualife.getProductSelectedSize
+        ? Aqualife.getProductSelectedSize(product)
+        : "";
+      const unitPrice = Aqualife.getProductEffectivePrice
+        ? Aqualife.getProductEffectivePrice(product, selectedSize)
+        : product.price;
+      const subtotal = unitPrice * Number(qty);
       total += subtotal;
       const stockInfo =
         typeof product.stock === "number" ? `Kho: ${product.stock}` : "";
+
+      const sizesList =
+        Array.isArray(product.sizes) && product.sizes.length ? product.sizes : [];
+      const sizeControlHtml = sizesList.length
+        ? `<div style="margin:6px 0;">
+            <label style="font-size:12.5px;color:#063954;font-weight:600;margin-right:6px;">Kích thước:</label>
+            <select class="cart-size-select" data-id="${product.id}" style="padding:4px 8px;border-radius:6px;border:1px solid #b8d8ee;font-size:12.5px;color:#073b5a;background:#f4faff;">
+              ${sizesList
+                .map(
+                  (s) =>
+                    `<option value="${s.size}" ${
+                      s.size === selectedSize ? "selected" : ""
+                    }>${s.size} — ${Aqualife.formatCurrency(s.price)}</option>`
+                )
+                .join("")}
+            </select>
+          </div>`
+        : "";
 
       return `
         <article class="card cart-item" data-id="${product.id}">
@@ -71,7 +95,8 @@ function renderCart(products) {
           <div>
             <h3><a href="product-detail.html?id=${product.id}">${product.name}</a></h3>
             <p class="muted">${product.shortDescription || ""} ${stockInfo ? `(${stockInfo})` : ""}</p>
-            <p class="price">${Aqualife.formatCurrency(product.price)}</p>
+            ${sizeControlHtml}
+            <p class="price">${Aqualife.formatCurrency(unitPrice)}</p>
           </div>
           <div>
             <div class="cart-item__actions">
@@ -91,6 +116,16 @@ function renderCart(products) {
     .join("");
 
   totalEl.textContent = Aqualife.formatCurrency(total);
+
+  listEl.querySelectorAll(".cart-size-select").forEach((selectEl) => {
+    selectEl.addEventListener("change", () => {
+      const id = selectEl.dataset.id;
+      if (id && Aqualife.setCartItemSize) {
+        Aqualife.setCartItemSize(id, selectEl.value);
+        renderCart(products);
+      }
+    });
+  });
 
   listEl.querySelectorAll("[data-action]").forEach((button) => {
     button.addEventListener("click", () => {

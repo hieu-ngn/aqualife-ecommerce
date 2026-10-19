@@ -162,6 +162,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       renderLowStockReplenishment();
     } else if (tabName === "revenue") {
       await loadRevenueReport();
+    } else if (tabName === "settings") {
+      await loadAdminStoreSettings();
     }
   }
 
@@ -190,11 +192,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   bindCatalogEvents();
   bindOrderEvents();
   bindUserEvents();
+  bindSettingsEvents();
 
-  // Tải dữ liệu mặc định (Quản lý sản phẩm + Tổng quan ngầm)
+  // Tải dữ liệu mặc định (Quản lý sản phẩm + Tổng quan ngầm + Cài đặt liên hệ Admin)
   await loadAdminCategories();
   await loadAdminProducts();
   loadOverview();
+  loadAdminStoreSettings();
 });
 
 // ==========================================================================
@@ -425,6 +429,19 @@ function renderProductTablePage() {
 
         const priceFormatted = `${new Intl.NumberFormat("vi-VN").format(p.price || 0)}đ`;
         const priceNote = p.price >= 200000 ? "Niêm yết trại" : "Giá tiêu chuẩn";
+        const productSizes = Array.isArray(p.sizes) && p.sizes.length
+          ? p.sizes
+          : [{ size: "Size M - Tiêu chuẩn", price: p.price || 0 }];
+        const sizesBadgesHtml = `
+          <div class="admin-table-size-pills">
+            ${productSizes
+              .map(
+                (s) =>
+                  `<span class="admin-table-size-pill"><b>${esc(s.size)}</b>: ${new Intl.NumberFormat("vi-VN").format(s.price || 0)}đ</span>`
+              )
+              .join("")}
+          </div>
+        `;
 
         return `
           <tr data-product-id="${p.id}">
@@ -458,6 +475,7 @@ function renderProductTablePage() {
             <td>
               <div class="price-cell-main">${priceFormatted}</div>
               <div class="price-cell-sub">${priceNote}</div>
+              ${sizesBadgesHtml}
             </td>
             <td class="eco-stock-cell">
               <div class="eco-stock-top">
@@ -530,6 +548,70 @@ function syncBulkToolbarState(currentPageItems = []) {
   }
 }
 
+function roundPriceStep(value) {
+  const num = Number(value || 0);
+  if (num <= 0) return 10000;
+  if (num < 50000) return Math.max(5000, Math.round(num / 2000) * 2000);
+  return Math.max(10000, Math.round(num / 5000) * 5000);
+}
+
+function generateSuggestedSizes(basePrice) {
+  const bp = Number(basePrice || 150000);
+  return [
+    { size: "Size S - Nhỏ (2 - 3cm)", price: roundPriceStep(bp * 0.75) },
+    { size: "Size M - Trung (4 - 6cm)", price: bp },
+    { size: "Size L - Trưởng thành (7 - 10cm)", price: roundPriceStep(bp * 1.45) },
+  ];
+}
+
+function addSizeRowToModal(sizeLabel = "", sizePrice = 0) {
+  const listEl = document.getElementById("prod-sizes-list");
+  if (!listEl) return;
+
+  const row = document.createElement("div");
+  row.className = "prod-size-row";
+  row.innerHTML = `
+    <input type="text" class="prod-size-name-input" placeholder="VD: Size M - Trung (4 - 6cm)" value="${esc(sizeLabel)}" required />
+    <input type="number" class="prod-size-price-input" min="0" step="1000" placeholder="Giá (VNĐ)" value="${Number(sizePrice || 0)}" required />
+    <button type="button" class="prod-size-remove-btn" title="Xóa kích thước này">
+      <i class="fa-solid fa-trash-can"></i>
+    </button>
+  `;
+  row.querySelector(".prod-size-remove-btn")?.addEventListener("click", () => {
+    const allRows = listEl.querySelectorAll(".prod-size-row");
+    if (allRows.length <= 1) {
+      window.Aqualife.showToast("Cần giữ ít nhất 1 kích thước cho sinh vật.", "error");
+      return;
+    }
+    row.remove();
+  });
+  listEl.appendChild(row);
+}
+
+function renderSizeRowsInModal(sizes = [], fallbackBasePrice = 150000) {
+  const listEl = document.getElementById("prod-sizes-list");
+  if (!listEl) return;
+  listEl.innerHTML = "";
+  const items = Array.isArray(sizes) && sizes.length > 0 ? sizes : generateSuggestedSizes(fallbackBasePrice);
+  items.forEach((item) => {
+    addSizeRowToModal(item.size || "", item.price ?? fallbackBasePrice);
+  });
+}
+
+function collectSizeRowsFromModal(fallbackBasePrice = 150000) {
+  const listEl = document.getElementById("prod-sizes-list");
+  if (!listEl) return generateSuggestedSizes(fallbackBasePrice);
+  const rows = Array.from(listEl.querySelectorAll(".prod-size-row"));
+  const parsed = rows
+    .map((r) => {
+      const size = r.querySelector(".prod-size-name-input")?.value.trim() || "";
+      const price = Number(r.querySelector(".prod-size-price-input")?.value || 0);
+      return { size, price };
+    })
+    .filter((item) => item.size !== "" && Number.isFinite(item.price) && item.price >= 0);
+  return parsed.length > 0 ? parsed : generateSuggestedSizes(fallbackBasePrice);
+}
+
 function openProductModal(prod = null) {
   const modal = document.getElementById("product-modal-backdrop");
   if (!modal) return;
@@ -549,6 +631,7 @@ function openProductModal(prod = null) {
     document.getElementById("prod-form-stock").value = String(prod.stock ?? 0);
     document.getElementById("prod-form-image").value = prod.image || "";
     document.getElementById("prod-form-desc").value = prod.description || "";
+    renderSizeRowsInModal(prod.sizes, Number(prod.price || 150000));
   } else {
     document.getElementById("product-modal-title").textContent = "Thêm cá thể / sản phẩm mới";
     document.getElementById("prod-form-id").value = "";
@@ -561,6 +644,7 @@ function openProductModal(prod = null) {
     document.getElementById("prod-form-stock").value = "25";
     document.getElementById("prod-form-image").value = "image/ocean-bg.svg";
     document.getElementById("prod-form-desc").value = "";
+    renderSizeRowsInModal(generateSuggestedSizes(150000), 150000);
   }
   modal.classList.remove("hidden");
 }
@@ -775,17 +859,19 @@ function bindCatalogEvents() {
       let count = 0;
       for (const item of items) {
         if (!item.name) continue;
+        const basePrice = Number(item.price || 100000);
         await window.Aqualife.apiFetch("/admin/products", {
           method: "POST",
           body: JSON.stringify({
             name: item.name,
             category_id: item.category_id || defaultCatId,
             water_type: item.water_type || item.waterType || "Nước ngọt",
-            price: Number(item.price || 100000),
+            price: basePrice,
             stock: Number(item.stock ?? 20),
             image: item.image || "image/ocean-bg.svg",
             description: item.description || "",
             status: "active",
+            sizes: Array.isArray(item.sizes) && item.sizes.length ? item.sizes : generateSuggestedSizes(basePrice),
           }),
         });
         count++;
@@ -806,18 +892,30 @@ function bindCatalogEvents() {
   document.getElementById("prod-modal-cancel")?.addEventListener("click", () => {
     prodModal?.classList.add("hidden");
   });
+  document.getElementById("btn-add-size-row")?.addEventListener("click", () => {
+    const bp = Number(document.getElementById("prod-form-price")?.value || 150000);
+    addSizeRowToModal("", bp);
+  });
+  document.getElementById("btn-auto-size-rows")?.addEventListener("click", () => {
+    const bp = Number(document.getElementById("prod-form-price")?.value || 150000);
+    renderSizeRowsInModal(generateSuggestedSizes(bp), bp);
+    window.Aqualife.showToast("Đã tự động tạo 3 mốc kích thước S / M / L theo giá cơ sở!", "success");
+  });
   document.getElementById("product-modal-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const id = document.getElementById("prod-form-id").value;
+    const basePrice = Number(document.getElementById("prod-form-price").value || 0);
+    const sizes = collectSizeRowsFromModal(basePrice);
     const payload = {
       name: document.getElementById("prod-form-name").value.trim(),
       category_id: Number(document.getElementById("prod-form-category").value) || null,
       water_type: document.getElementById("prod-form-water-type")?.value || "Nước ngọt",
       status: document.getElementById("prod-form-status").value,
-      price: Number(document.getElementById("prod-form-price").value || 0),
+      price: basePrice,
       stock: Number(document.getElementById("prod-form-stock").value || 0),
       image: document.getElementById("prod-form-image").value.trim(),
       description: document.getElementById("prod-form-desc").value.trim(),
+      sizes,
     };
     try {
       if (id) {
@@ -825,13 +923,13 @@ function bindCatalogEvents() {
           method: "PUT",
           body: JSON.stringify(payload),
         });
-        window.Aqualife.showToast("Đã cập nhật thông tin sinh vật!", "success");
+        window.Aqualife.showToast("Đã cập nhật thông tin & bảng giá kích thước sinh vật!", "success");
       } else {
         await window.Aqualife.apiFetch("/admin/products", {
           method: "POST",
           body: JSON.stringify(payload),
         });
-        window.Aqualife.showToast("Đã thêm sinh vật mới vào kho!", "success");
+        window.Aqualife.showToast("Đã thêm sinh vật mới kèm bảng giá kích thước vào kho!", "success");
       }
       prodModal?.classList.add("hidden");
       await loadAdminProducts();
@@ -1313,3 +1411,99 @@ async function loadRevenueReport() {
     window.Aqualife.showToast(err.message, "error");
   }
 }
+
+// ==========================================================================
+// PANEL 7: CÀI ĐẶT HỆ THỐNG & THÔNG TIN LIÊN HỆ ADMIN
+// ==========================================================================
+function renderSettingsPreview(info) {
+  if (!info) return;
+  const setVal = (id, v) => {
+    const el = document.getElementById(id);
+    if (el && v !== undefined && v !== null) el.value = v;
+  };
+  const setTxt = (id, v) => {
+    const el = document.getElementById(id);
+    if (el && v) el.textContent = v;
+  };
+
+  setVal("set-store-address", info.address || "");
+  setVal("set-store-address-sub", info.address_sub || "");
+  setVal("set-store-phone", info.phone || "");
+  setVal("set-store-hotline-sub", info.hotline_sub || "");
+  setVal("set-store-email", info.email || "");
+  setVal("set-store-email-sub", info.email_sub || "");
+  setVal("set-store-hours", info.open_hours || "");
+  setVal("set-store-hours-sub", info.open_hours_sub || "");
+
+  setTxt("prev-store-address", info.address);
+  setTxt("prev-store-address-sub", info.address_sub);
+  setTxt("prev-store-phone", info.phone);
+  setTxt("prev-store-hotline-sub", info.hotline_sub);
+  setTxt("prev-store-email", info.email);
+  setTxt("prev-store-email-sub", info.email_sub);
+  setTxt("prev-store-hours", info.open_hours);
+  setTxt("prev-store-hours-sub", info.open_hours_sub);
+}
+
+async function loadAdminStoreSettings() {
+  try {
+    const info = await window.Aqualife.apiFetch("/admin/settings");
+    if (info) {
+      localStorage.setItem("aqualife_store_info_v1", JSON.stringify(info));
+      renderSettingsPreview(info);
+    }
+  } catch {
+    // ignore
+  }
+}
+
+function bindSettingsEvents() {
+  const form = document.getElementById("admin-store-settings-form");
+  if (!form) return;
+
+  // Live preview khi gõ
+  const liveMap = [
+    ["set-store-address", "prev-store-address"],
+    ["set-store-address-sub", "prev-store-address-sub"],
+    ["set-store-phone", "prev-store-phone"],
+    ["set-store-hotline-sub", "prev-store-hotline-sub"],
+    ["set-store-email", "prev-store-email"],
+    ["set-store-email-sub", "prev-store-email-sub"],
+    ["set-store-hours", "prev-store-hours"],
+    ["set-store-hours-sub", "prev-store-hours-sub"],
+  ];
+  liveMap.forEach(([inputId, prevId]) => {
+    const inp = document.getElementById(inputId);
+    const prev = document.getElementById(prevId);
+    inp?.addEventListener("input", () => {
+      if (prev) prev.textContent = inp.value.trim() || "—";
+    });
+  });
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const payload = {
+      address: document.getElementById("set-store-address")?.value.trim() || "",
+      address_sub: document.getElementById("set-store-address-sub")?.value.trim() || "",
+      phone: document.getElementById("set-store-phone")?.value.trim() || "",
+      hotline_sub: document.getElementById("set-store-hotline-sub")?.value.trim() || "",
+      email: document.getElementById("set-store-email")?.value.trim() || "",
+      email_sub: document.getElementById("set-store-email-sub")?.value.trim() || "",
+      open_hours: document.getElementById("set-store-hours")?.value.trim() || "",
+      open_hours_sub: document.getElementById("set-store-hours-sub")?.value.trim() || "",
+    };
+
+    try {
+      const updated = await window.Aqualife.apiFetch("/admin/settings", {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      });
+      localStorage.setItem("aqualife_store_info_v1", JSON.stringify(updated));
+      renderSettingsPreview(updated);
+      window.Aqualife.showToast("Đã lưu thông tin Admin & đồng bộ lên Trang Liên hệ!", "success");
+    } catch (err) {
+      window.Aqualife.showToast(err.message, "error");
+    }
+  });
+}
+

@@ -25,6 +25,12 @@ def _validate_rating_and_comment(body: dict):
     return rating, comment, None
 
 
+def list_featured_reviews():
+    raw_limit = request.args.get("limit", "20")
+    limit = int(raw_limit) if raw_limit.isdigit() and int(raw_limit) > 0 else 20
+    return success(review_service.list_featured_reviews(limit=min(limit, 50)))
+
+
 def list_product_reviews(product_id: int):
     current_user_id = session.get("user_id")
     try:

@@ -67,6 +67,18 @@ def create_app():
                 {"success": False, "message": "Database connection failed"}
             ), 500
 
+    @app.get("/api/store-info")
+    def public_store_info():
+        from controllers.admin_controller import get_public_store_info
+
+        return get_public_store_info()
+
+    @app.post("/api/advisor/chat")
+    def advisor_chat_endpoint():
+        from controllers.advisor_controller import chat_advisor
+
+        return chat_advisor()
+
     # Unified Frontend Serving (chạy như web thật tại http://localhost:5000)
     @app.get("/")
     def index_redirect():

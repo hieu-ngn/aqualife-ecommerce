@@ -1,3 +1,4 @@
+import json
 from decimal import Decimal
 from config.database import get_db_cursor
 
@@ -6,6 +7,58 @@ def _serialize_number(value):
     if isinstance(value, Decimal):
         return int(value) if value == value.to_integral_value() else float(value)
     return value
+
+
+def _round_vnd(val: float) -> int:
+    if val <= 15000:
+        return int(round(val / 1000.0) * 1000)
+    return int(round(val / 5000.0) * 5000)
+
+
+def _normalize_sizes(raw_sizes, base_price=0) -> list[dict]:
+    parsed = raw_sizes
+    if isinstance(raw_sizes, str):
+        try:
+            parsed = json.loads(raw_sizes)
+        except Exception:
+            parsed = []
+
+    cleaned = []
+    if isinstance(parsed, list):
+        for item in parsed:
+            if not isinstance(item, dict):
+                continue
+            label = str(item.get("size") or item.get("label") or "").strip()
+            if not label:
+                continue
+            try:
+                p_val = _serialize_number(Decimal(str(item.get("price", base_price or 0))))
+            except Exception:
+                p_val = _serialize_number(Decimal(str(base_price or 0)))
+            if p_val < 0:
+                p_val = 0
+            cleaned.append({"size": label, "price": p_val})
+
+    if not cleaned:
+        p = float(base_price or 0)
+        cleaned = [
+            {"size": "Size S - Nhỏ (2 - 3cm)", "price": int(p)},
+            {"size": "Size M - Trung (4 - 6cm)", "price": _round_vnd(p * 1.4)},
+            {"size": "Size L - Trưởng thành (7 - 10cm)", "price": _round_vnd(p * 1.85)},
+        ]
+    return cleaned
+
+
+def resolve_size_price(product_row: dict, selected_size: str | None = None) -> tuple[str, Decimal]:
+    """Return (resolved_size_label, authoritative_unit_price) for a product."""
+    base_price = Decimal(str(product_row.get("price") or 0))
+    sizes = _normalize_sizes(product_row.get("sizes"), base_price)
+    if selected_size:
+        target = selected_size.strip().lower()
+        for s in sizes:
+            if s["size"].strip().lower() == target:
+                return s["size"], Decimal(str(s["price"]))
+    return (selected_size or "").strip(), base_price
 
 
 def _serialize_category(row):
@@ -21,17 +74,31 @@ def _serialize_category(row):
     }
 
 
+CATEGORY_TO_SPECIES = {
+    "Cá cảnh": "Cá",
+    "Tép cảnh": "Tép",
+    "Ốc cảnh": "Ốc",
+    "Thủy sinh & San hô": "Thủy Sinh / San hô",
+}
+
+
 def _serialize_product(row):
     if not row:
         return None
     wt = row.get("water_type") or "Nước ngọt"
+    cat_name = row.get("category_name") or ""
+    species = row.get("species") or CATEGORY_TO_SPECIES.get(cat_name, "Cá")
+    base_price = _serialize_number(row["price"])
+    sizes = _normalize_sizes(row.get("sizes"), base_price)
     return {
         "id": row["id"],
         "category_id": row["category_id"],
-        "category_name": row.get("category_name"),
+        "category_name": cat_name,
+        "species": species,
         "name": row["name"],
         "description": row.get("description") or "",
-        "price": _serialize_number(row["price"]),
+        "price": base_price,
+        "sizes": sizes,
         "stock": row["stock"],
         "image": row.get("image"),
         "water_type": wt,
@@ -127,7 +194,7 @@ def list_products(
 
     query = f"""
         SELECT p.id, p.category_id, c.name AS category_name,
-               p.name, p.description, p.price, p.stock, p.image, p.water_type, p.status,
+               p.name, p.description, p.price, p.sizes, p.stock, p.image, p.water_type, p.status,
                p.created_at, p.updated_at
         FROM products p
         LEFT JOIN categories c ON c.id = p.category_id
@@ -151,7 +218,7 @@ def list_products(
 def get_product_by_id(product_id: int, include_inactive: bool = False):
     query = """
         SELECT p.id, p.category_id, c.name AS category_name,
-               p.name, p.description, p.price, p.stock, p.image, p.water_type, p.status,
+               p.name, p.description, p.price, p.sizes, p.stock, p.image, p.water_type, p.status,
                p.created_at, p.updated_at
         FROM products p
         LEFT JOIN categories c ON c.id = p.category_id

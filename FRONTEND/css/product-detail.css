@@ -32,6 +32,65 @@
   max-width: 120px;
 }
 
+.detail-sizes-section {
+  margin: 14px 0;
+  padding: 12px 14px;
+  background: #f3f9fe;
+  border: 1px solid #d4e8f7;
+  border-radius: 12px;
+}
+
+.detail-sizes-label {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 14px;
+  color: #063954;
+}
+
+.size-options-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px;
+}
+
+.size-option-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: 1.5px solid #c5dff2;
+  background: #ffffff;
+  color: #0b3c5d;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s ease;
+}
+
+.size-option-btn:hover {
+  border-color: #0284c7;
+  background: #f0f9ff;
+}
+
+.size-option-btn.active {
+  border-color: #0277bd;
+  background: linear-gradient(135deg, #e0f2fe, #f0f9ff);
+  box-shadow: 0 2px 8px rgba(2, 119, 189, 0.16);
+}
+
+.size-option-btn .size-opt-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #073b5a;
+}
+
+.size-option-btn .size-opt-price {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0277bd;
+}
+
 .related-title {
   margin: 24px 0 12px;
 }
