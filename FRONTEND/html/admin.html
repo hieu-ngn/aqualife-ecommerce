@@ -7,8 +7,10 @@
   <title>Aqualife Admin - The Oceanic Curator</title>
   <link rel="stylesheet" href="../css/base.css" />
   <link rel="stylesheet" href="../css/admin.css" />
+  <link rel="stylesheet" href="../css/admin-bi.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <script defer src="../js/common.js"></script>
+  <script defer src="../js/admin-bi.js"></script>
   <script defer src="../js/admin.js"></script>
 </head>
 <body class="admin-body">
@@ -164,11 +166,8 @@
               </div>
               <div class="adm-kpi-bottom">
                 <span class="adm-kpi-trend-blue" id="stat-total-sub">
-                  <i class="fa-solid fa-arrow-trend-up"></i> +12 tháng này
+                  <i class="fa-solid fa-arrow-trend-up"></i> 0 mới trong 30 ngày
                 </span>
-                <svg width="78" height="24" viewBox="0 0 78 24" fill="none">
-                  <path d="M2 18C14 8 26 8 38 15C50 22 62 20 76 10" stroke="#0277bd" stroke-width="2.2" stroke-linecap="round"/>
-                </svg>
               </div>
             </div>
 
@@ -186,9 +185,6 @@
                 <span class="adm-kpi-trend-muted" id="stat-active-percent">
                   <span style="color:#0277bd;">●</span> 100% danh mục
                 </span>
-                <svg width="78" height="24" viewBox="0 0 78 24" fill="none">
-                  <path d="M2 19C18 19 28 16 42 12C56 8 66 9 76 12" stroke="#0277bd" stroke-width="2.2" stroke-linecap="round"/>
-                </svg>
               </div>
             </div>
 
@@ -220,7 +216,7 @@
               </div>
               <div class="adm-kpi-bottom">
                 <span class="adm-kpi-trend-red">Gián đoạn doanh thu</span>
-                <span class="adm-mini-badge badge-loss">-5.4% so tuần trước</span>
+                <span class="adm-mini-badge badge-loss" id="stat-out-badge">đang tính...</span>
               </div>
             </div>
           </div>
@@ -243,6 +239,8 @@
                 <option value="low">Sắp hết hàng (≤ 5 cá thể)</option>
                 <option value="out">Hết hàng (0 cá thể)</option>
                 <option value="inactive">Ngừng kinh doanh (Đã ẩn)</option>
+                <option value="restock">Cần nhập thêm (đủ bán &lt; 14 ngày)</option>
+                <option value="dead">Tồn đọng (còn hàng, không bán được)</option>
               </select>
 
               <select id="admin-prod-price-range" class="adm-select">
@@ -258,6 +256,8 @@
                 <option value="price_asc">Giá thấp → cao</option>
                 <option value="stock_asc">Tồn kho thấp nhất</option>
                 <option value="name_asc">Tên A → Z</option>
+                <option value="best_units">Bán chạy nhất (số lượng)</option>
+                <option value="best_revenue">Doanh thu cao nhất</option>
               </select>
             </div>
 
@@ -292,13 +292,14 @@
                     <th>PHÂN LOẠI HỆ</th>
                     <th>ĐƠN GIÁ NIÊM YẾT</th>
                     <th>TỒN KHO SINH THÁI</th>
+                    <th>HIỆU SUẤT BÁN <span class="adm-perf-range" id="perf-range"><button type="button" data-d="7">7N</button><button type="button" data-d="30" class="active">30N</button><button type="button" data-d="90">90N</button></span></th>
                     <th>TRẠNG THÁI</th>
                     <th>CẬP NHẬT</th>
                   </tr>
                 </thead>
                 <tbody id="admin-products-tbody">
                   <tr>
-                    <td colspan="7" class="muted" style="text-align:center;padding:32px;">
+                    <td colspan="8" class="muted" style="text-align:center;padding:32px;">
                       Đang tải danh mục kho sinh vật...
                     </td>
                   </tr>
@@ -584,25 +585,114 @@
              PANEL 6: BÁO CÁO DOANH THU (REVENUE)
              ============================================================== -->
         <section id="panel-revenue" class="adm-panel">
-          <div class="adm-breadcrumb">
-            <span>Admin</span> <i class="fa-solid fa-chevron-right" style="font-size:10px;"></i>
-            <span class="bc-link">Báo cáo doanh thu</span>
-          </div>
-          <div class="adm-page-header">
-            <div class="adm-title-group">
-              <h1>Báo cáo Doanh thu & Phân tích Kinh doanh</h1>
-            </div>
-          </div>
-
-          <div class="grid grid-2">
-            <div class="adm-table-card" style="padding:24px;">
-              <h3 style="margin-top:0;color:#01579b;"><i class="fa-solid fa-chart-Simple"></i> Doanh thu theo Phân loại Hệ</h3>
-              <div id="revenue-by-category-box"></div>
+          <div id="bi-root" class="bi-root">
+            <div class="adm-breadcrumb">
+              <span>Admin</span> <i class="fa-solid fa-chevron-right" style="font-size:10px;"></i>
+              <span class="bc-link">Báo cáo doanh thu</span>
             </div>
 
-            <div class="adm-table-card" style="padding:24px;">
-              <h3 style="margin-top:0;color:#01579b;"><i class="fa-solid fa-credit-card"></i> Doanh thu theo Phương thức Thanh toán</h3>
-              <div id="revenue-by-payment-box"></div>
+            <div class="bi-head">
+              <div>
+                <div class="bi-eyebrow">BI · DOANH THU &amp; KINH DOANH <span id="bi-updated" class="bi-updated"></span></div>
+                <h1>Báo cáo Doanh thu &amp; Phân tích Kinh doanh</h1>
+                <p id="bi-def" class="bi-lead">Doanh thu = đơn hoàn tất.</p>
+              </div>
+              <div class="bi-controls">
+                <div class="bi-seg" id="bi-presets" role="group" aria-label="Khoảng thời gian">
+                  <button type="button" data-p="7d">7 ngày</button>
+                  <button type="button" data-p="30d" class="active">30 ngày</button>
+                  <button type="button" data-p="90d">90 ngày</button>
+                  <button type="button" data-p="ytd">Năm nay</button>
+                  <button type="button" data-p="12m">12 tháng</button>
+                </div>
+                <div class="bi-daterange">
+                  <input type="date" id="bi-from" aria-label="Từ ngày" /> <span>→</span>
+                  <input type="date" id="bi-to" aria-label="Đến ngày" />
+                </div>
+                <div class="bi-seg" id="bi-group" role="group" aria-label="Gom theo">
+                  <button type="button" data-g="day">Ngày</button>
+                  <button type="button" data-g="month">Tháng</button>
+                </div>
+                <button type="button" id="bi-refresh" class="btn-adm-outline" title="Làm mới dữ liệu">Làm mới</button>
+                <button type="button" id="bi-export" class="btn-adm-primary">Xuất CSV</button>
+              </div>
+            </div>
+
+            <div id="bi-error" class="bi-error" hidden></div>
+
+            <section class="bi-kpis" id="bi-kpis" aria-label="Chỉ số chính"></section>
+
+            <div class="bi-row bi-row-8-4">
+              <div class="bi-card">
+                <div class="bi-card-head">
+                  <div><h3 id="bi-trend-title">Doanh thu</h3><p id="bi-trend-sub" class="bi-card-sub"></p></div>
+                  <div class="bi-card-tools">
+                    <span class="bi-key"><i class="bi-dot" style="background:#2a78d6"></i>Kỳ này</span>
+                    <span class="bi-key"><i class="bi-dash"></i>Kỳ trước</span>
+                    <button type="button" id="bi-toggle-table" class="bi-mini-btn">Xem bảng</button>
+                  </div>
+                </div>
+                <div id="bi-trend" class="bi-chart"></div>
+              </div>
+              <div class="bi-card">
+                <div class="bi-card-head"><div><h3>Cơ cấu doanh thu</h3><p class="bi-card-sub">Theo nhóm hàng · so với kỳ trước</p></div></div>
+                <div id="bi-cats"></div>
+              </div>
+            </div>
+
+            <div class="bi-row bi-row-5-7">
+              <div class="bi-card">
+                <div class="bi-card-head"><div><h3>Khung giờ mua hàng</h3><p class="bi-card-sub">Thứ trong tuần × buổi trong ngày</p></div></div>
+                <div id="bi-heat"></div>
+              </div>
+              <div class="bi-card">
+                <div class="bi-card-head"><div><h3>Vận hành đơn &amp; thanh toán</h3><p class="bi-card-sub">Đơn tạo trong kỳ theo trạng thái · doanh thu theo phương thức thanh toán</p></div></div>
+                <div class="bi-two">
+                  <div id="bi-funnel"></div>
+                  <div><div class="bi-subhead">Phương thức thanh toán</div><div id="bi-pay"></div></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="bi-card">
+              <div class="bi-card-head">
+                <div><h3>Xếp hạng sản phẩm &amp; phân tích ABC</h3>
+                  <p class="bi-card-sub">Top 10 theo doanh thu. Nhóm A tạo 80% doanh thu đầu, B 15% tiếp theo, C 5% cuối. Bấm tên để mở trong Quản lý sản phẩm.</p></div>
+              </div>
+              <div id="bi-abc" class="bi-abc"></div>
+              <div class="bi-table-wrap">
+                <table class="bi-table">
+                  <thead><tr><th class="num">#</th><th>Sản phẩm</th><th>ABC</th><th class="num">Đã bán</th><th class="num">Doanh thu</th><th>Tỷ trọng</th><th>So kỳ trước</th><th class="num">Tồn · đủ bán</th></tr></thead>
+                  <tbody id="bi-top-body"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="bi-card" id="bi-inventory">
+              <div class="bi-card-head"><div><h3>Sức khỏe tồn kho</h3><p id="bi-inv-meta" class="bi-card-sub"></p></div></div>
+              <div class="bi-three">
+                <div><div class="bi-subhead">Sắp hết trong 14 ngày <span class="bi-count" id="bi-inv-risk-n">0</span></div><div id="bi-inv-risk"></div></div>
+                <div><div class="bi-subhead">Hết hàng nhưng vẫn có nhu cầu <span class="bi-count" id="bi-inv-oos-n">0</span></div><div id="bi-inv-oos"></div></div>
+                <div><div class="bi-subhead">Tồn đọng 60 ngày chưa bán <span class="bi-count" id="bi-inv-dead-n">0</span></div><div id="bi-inv-dead"></div></div>
+              </div>
+            </div>
+
+            <div class="bi-card">
+              <div class="bi-card-head">
+                <div><h3>Xu hướng 12 tháng &amp; dự báo 3 tháng tới</h3><p class="bi-card-sub">Cột đậm = thực tế · cột nhạt nét đứt = dự phóng/dự báo · thanh dọc = khoảng ±1 độ lệch chuẩn</p></div>
+              </div>
+              <div id="bi-forecast" class="bi-chart"></div>
+              <p id="bi-fc-note" class="bi-note"></p>
+            </div>
+
+            <div class="bi-card bi-card-plain">
+              <div class="bi-card-head"><div><h3>Phân tích kinh doanh</h3><p class="bi-card-sub">Nhận định tự động từ số liệu của kỳ đã chọn</p></div></div>
+              <div id="bi-insights" class="bi-ins-grid"></div>
+            </div>
+
+            <div class="bi-card bi-card-plain">
+              <div class="bi-card-head"><div><h3>Đề xuất phát triển</h3><p class="bi-card-sub">Lộ trình theo mức ưu tiên, gắn với số liệu hiện tại</p></div></div>
+              <div id="bi-roadmap" class="bi-road"></div>
             </div>
           </div>
         </section>

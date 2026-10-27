@@ -16,6 +16,7 @@ admin_bp.delete("/categories/<int:category_id>")(admin_controller.delete_categor
 # Products (M10)
 admin_bp.get("/products")(admin_controller.list_products)
 admin_bp.post("/products")(admin_controller.create_product)
+admin_bp.get("/products/performance")(admin_controller.get_product_performance)
 admin_bp.post("/products/bulk")(admin_controller.bulk_update_products)
 admin_bp.put("/products/<int:product_id>")(admin_controller.update_product)
 admin_bp.delete("/products/<int:product_id>")(admin_controller.delete_product)

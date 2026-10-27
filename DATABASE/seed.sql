@@ -171,7 +171,7 @@ WHERE sizes = '[]'::jsonb;
 INSERT INTO orders (user_id, total_amount, status, shipping_name, shipping_phone, shipping_address, payment_method, created_at)
 VALUES (
     (SELECT id FROM users WHERE email = 'khach1@aqualife.com'),
-    150000, 'completed', 'Nguyen Van Khach', '0901111111', '12 Nguyen Trai, Ha Noi', 'cod',
+    135000, 'completed', 'Nguyen Van Khach', '0901111111', '12 Nguyen Trai, Ha Noi', 'cod',
     NOW() - INTERVAL '3 days'
 );
 

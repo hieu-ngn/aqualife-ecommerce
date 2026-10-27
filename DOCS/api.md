@@ -164,6 +164,24 @@ GET /api/admin/revenue?group_by=month
 
 Revenue should follow the business rule defined in the database specification, normally using completed orders.
 
+#### Revenue analytics (BI) response
+
+`GET /api/admin/revenue?from=YYYY-MM-DD&to=YYYY-MM-DD&group_by=day|month`
+
+Defaults: last 30 days; `group_by` is `day` for ranges up to 62 days, otherwise `month`.
+Errors: `401` not logged in, `403` not admin, `422` invalid date / `from > to` / range > 800 days / bad `group_by`.
+
+Revenue = `orders.total_amount` of `completed` orders, bucketed by `orders.created_at`.
+There is no cost price in the schema, so profit/margin is intentionally not reported.
+
+Main keys of `data`: `range`, `kpi`, `kpi_prev` (the equally long period right before), `change` (% vs previous),
+`series` (with `prev_revenue`), `by_category`, `by_payment`, `funnel`, `heatmap`, `top_products`, `abc`, `abc_summary`,
+`top_customers`, `inventory`, `forecast`, `insights`, `roadmap`.
+
+`GET /api/admin/products/performance?days=7|30|90|365` returns per-product units, revenue, rank, ABC class and
+stock cover (days) keyed by product id; used by the "Hiệu suất bán" column of the admin product table.
+
+
 ### Admin Product Management
 
 ```text

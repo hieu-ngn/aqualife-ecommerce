@@ -23,6 +23,8 @@ let selectedProductIds = new Set();
 let currentCatalogPage = 1;
 const CATALOG_PAGE_SIZE = 10;
 let currentAdminUser = null;
+let productPerf = {}; // product_id -> {units, revenue, rank, abc, cover_days} (đơn hoàn tất)
+let perfDays = 30;
 
 function esc(str) {
   return String(str ?? "")
@@ -278,6 +280,46 @@ async function loadAdminProducts() {
   } catch (err) {
     if (window.Aqualife.showToast) window.Aqualife.showToast(err.message, "error");
   }
+  loadProductPerformance(); // không chặn bảng; vẽ lại khi có số liệu
+}
+
+async function loadProductPerformance() {
+  try {
+    const data = await window.Aqualife.apiFetch(`/admin/products/performance?days=${perfDays}`);
+    productPerf = data.items || {};
+  } catch {
+    productPerf = {}; // cột hiệu suất hiện "chưa bán", phần còn lại vẫn dùng được
+  }
+  const badge = document.getElementById("stat-out-badge");
+  if (badge) {
+    const demand = allAdminProducts.filter(
+      (p) => p.status === "active" && Number(p.stock) <= 0 && productPerf[String(p.id)]
+    ).length;
+    badge.textContent = demand ? `${demand} mã đang có nhu cầu` : "Không mã nào có nhu cầu";
+  }
+  applyProductFiltersAndRender();
+}
+
+function perfCellHtml(p) {
+  const perf = productPerf[String(p.id)];
+  if (!perf) return `<div class="perf-none">Chưa bán được trong ${perfDays} ngày</div>`;
+  const money = new Intl.NumberFormat("vi-VN").format(Math.round(perf.revenue));
+  let cover = "";
+  if (perf.cover_days !== null && perf.cover_days !== undefined) {
+    const stock = Number(p.stock ?? 0);
+    cover =
+      stock <= 0
+        ? `<span class="perf-cover-bad">Hết hàng</span>`
+        : perf.cover_days < 14
+        ? `<span class="perf-cover-warn">Đủ bán ~${Math.round(perf.cover_days)} ngày</span>`
+        : `<span class="perf-sub">Đủ bán ~${Math.round(perf.cover_days)} ngày</span>`;
+  }
+  const abcHint = perf.abc === "A" ? "nằm trong 80% doanh thu đầu" : perf.abc === "B" ? "15% doanh thu tiếp theo" : "5% doanh thu cuối";
+  return `
+    <div class="perf-row"><b>${perf.units}</b> đã bán
+      <span class="perf-abc perf-abc-${perf.abc}" title="Nhóm ${perf.abc}: ${abcHint}">${perf.abc}</span></div>
+    <div class="perf-sub">${money}đ · hạng #${perf.rank}</div>
+    <div>${cover}</div>`;
 }
 
 function updateProductKpiCards(products) {
@@ -295,6 +337,12 @@ function updateProductKpiCards(products) {
   const outEl = document.getElementById("stat-out-stock");
 
   if (totalEl) totalEl.textContent = String(total);
+  const subEl = document.getElementById("stat-total-sub");
+  if (subEl) {
+    const cutoff = Date.now() - 30 * 86400000;
+    const fresh = products.filter((p) => p.created_at && new Date(p.created_at).getTime() >= cutoff).length;
+    subEl.innerHTML = `<i class="fa-solid fa-arrow-trend-up"></i> ${fresh} mới trong 30 ngày`;
+  }
   if (activeEl) activeEl.textContent = String(activeCount);
   if (activePctEl) {
     activePctEl.innerHTML = `<span style="color:#0277bd;">●</span> ${activePct}% danh mục`;
@@ -340,6 +388,11 @@ function applyProductFiltersAndRender() {
       if (p.status !== "active" || p.stock > 0) return false;
     } else if (statusFilter === "inactive") {
       if (p.status !== "inactive") return false;
+    } else if (statusFilter === "restock") {
+      const perf = productPerf[String(p.id)];
+      if (p.status !== "active" || !perf || perf.cover_days === null || perf.cover_days >= 14) return false;
+    } else if (statusFilter === "dead") {
+      if (p.status !== "active" || p.stock <= 0 || productPerf[String(p.id)]) return false;
     }
 
     const price = Number(p.price || 0);
@@ -355,6 +408,10 @@ function applyProductFiltersAndRender() {
     if (sortMode === "price_asc") return Number(a.price) - Number(b.price);
     if (sortMode === "stock_asc") return Number(a.stock) - Number(b.stock);
     if (sortMode === "name_asc") return String(a.name).localeCompare(String(b.name), "vi");
+    if (sortMode === "best_units")
+      return (productPerf[String(b.id)]?.units || 0) - (productPerf[String(a.id)]?.units || 0);
+    if (sortMode === "best_revenue")
+      return (productPerf[String(b.id)]?.revenue || 0) - (productPerf[String(a.id)]?.revenue || 0);
     return Number(b.id) - Number(a.id);
   });
 
@@ -378,7 +435,7 @@ function renderProductTablePage() {
   if (!pageItems.length) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="7" class="muted" style="text-align:center;padding:32px;">
+        <td colspan="8" class="muted" style="text-align:center;padding:32px;">
           Không tìm thấy cá thể sinh vật nào khớp bộ lọc hiện tại.
         </td>
       </tr>
@@ -486,6 +543,7 @@ function renderProductTablePage() {
                 <div class="eco-progress-fill ${fillCls}" style="width:${stock <= 0 ? 100 : barPct}%;"></div>
               </div>
             </td>
+            <td class="perf-cell">${perfCellHtml(p)}</td>
             <td>
               <span class="eco-status-badge ${badgeCls}">${badgeText}</span>
             </td>
@@ -650,6 +708,14 @@ function openProductModal(prod = null) {
 }
 
 function bindCatalogEvents() {
+  // Đổi khoảng thời gian của cột "Hiệu suất bán"
+  document.querySelectorAll("#perf-range button").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      perfDays = Number(btn.dataset.d);
+      document.querySelectorAll("#perf-range button").forEach((b) => b.classList.toggle("active", b === btn));
+      loadProductPerformance();
+    });
+  });
   // Bộ lọc tự động khi nhập/chọn
   ["admin-prod-search", "admin-prod-category", "admin-prod-status", "admin-prod-price-range", "admin-prod-sort"].forEach(
     (id) => {
@@ -1355,61 +1421,8 @@ function renderLowStockReplenishment() {
 // PANEL 6: BÁO CÁO DOANH THU (REVENUE)
 // ==========================================================================
 async function loadRevenueReport() {
-  const catBox = document.getElementById("revenue-by-category-box");
-  const payBox = document.getElementById("revenue-by-payment-box");
-  if (!catBox || !payBox) return;
-
-  try {
-    const data = await window.Aqualife.apiFetch("/admin/revenue");
-    const byCat = data.by_category || [];
-    const byPay = data.by_payment || [];
-
-    const maxCatRev = Math.max(1, ...byCat.map((c) => Number(c.revenue || 0)));
-    catBox.innerHTML = byCat.length
-      ? byCat
-          .map((c) => {
-            const pct = Math.max(5, Math.round((Number(c.revenue || 0) / maxCatRev) * 100));
-            return `
-              <div class="rev-bar-row">
-                <div class="rev-bar-head">
-                  <span>${esc(c.category_name)} (${c.units_sold} cá thể)</span>
-                  <strong>${window.Aqualife.formatCurrency(c.revenue)}</strong>
-                </div>
-                <div class="rev-bar-track">
-                  <div class="rev-bar-fill" style="width:${pct}%;"></div>
-                </div>
-              </div>
-            `;
-          })
-          .join("")
-      : `<p class="muted">Chưa có dữ liệu doanh thu theo danh mục.</p>`;
-
-    const maxPayRev = Math.max(1, ...byPay.map((p) => Number(p.revenue || 0)));
-    payBox.innerHTML = byPay.length
-      ? byPay
-          .map((p) => {
-            const pct = Math.max(5, Math.round((Number(p.revenue || 0) / maxPayRev) * 100));
-            const label =
-              p.payment_method === "bank_transfer"
-                ? "Chuyển khoản Ngân hàng"
-                : "Thanh toán khi nhận hàng (COD)";
-            return `
-              <div class="rev-bar-row">
-                <div class="rev-bar-head">
-                  <span>${label} (${p.order_count} đơn)</span>
-                  <strong>${window.Aqualife.formatCurrency(p.revenue)}</strong>
-                </div>
-                <div class="rev-bar-track">
-                  <div class="rev-bar-fill" style="width:${pct}%;"></div>
-                </div>
-              </div>
-            `;
-          })
-          .join("")
-      : `<p class="muted">Chưa có dữ liệu thanh toán.</p>`;
-  } catch (err) {
-    window.Aqualife.showToast(err.message, "error");
-  }
+  // Dashboard BI nằm trong js/admin-bi.js
+  if (window.AdminBI) await window.AdminBI.load();
 }
 
 // ==========================================================================

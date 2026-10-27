@@ -1,7 +1,8 @@
+from datetime import date, timedelta
 from decimal import Decimal, InvalidOperation
 from flask import g, request
 from middleware.auth import admin_required
-from services import dashboard_service
+from services import analytics_service, dashboard_service
 from services.cart_service import ProductNotFoundError
 from services.order_service import InvalidOrderStatusError, OrderNotFoundError
 from services.user_service import UserNotFoundError
@@ -407,7 +408,42 @@ def bulk_update_products():
 
 @admin_required
 def get_revenue():
-    return success(dashboard_service.get_revenue_report())
+    """Báo cáo doanh thu / BI.
+
+    Query: from=YYYY-MM-DD, to=YYYY-MM-DD, group_by=day|month.
+    Mặc định: 30 ngày gần nhất. Định dạng `by_category`/`by_payment` đã đổi so
+    với bản cũ (name/orders thay cho category_name/order_count).
+    """
+    today = date.today()
+    try:
+        d2 = date.fromisoformat(request.args.get("to") or today.isoformat())
+        d1 = date.fromisoformat(request.args.get("from") or (d2 - timedelta(days=29)).isoformat())
+    except ValueError:
+        return error("Ngày không hợp lệ, định dạng đúng là YYYY-MM-DD", 422)
+    if d1 > d2:
+        return error("Ngày bắt đầu phải nhỏ hơn hoặc bằng ngày kết thúc", 422)
+    if (d2 - d1).days > 800:
+        return error("Khoảng thời gian tối đa là 800 ngày", 422)
+
+    group_by = (request.args.get("group_by") or "").strip().lower()
+    if not group_by:
+        group_by = "day" if (d2 - d1).days <= 62 else "month"
+    if group_by not in ("day", "month"):
+        return error("group_by chỉ nhận day hoặc month", 422)
+
+    data = analytics_service.get_revenue_analytics(d1, d2, group_by)
+    return success(data)
+
+
+@admin_required
+def get_product_performance():
+    try:
+        days = int(request.args.get("days", 30))
+    except ValueError:
+        return error("days phải là số nguyên", 422)
+    if days not in (7, 30, 90, 365):
+        return error("days chỉ nhận 7, 30, 90 hoặc 365", 422)
+    return success(analytics_service.get_product_performance(days))
 
 
 def get_public_store_info():
