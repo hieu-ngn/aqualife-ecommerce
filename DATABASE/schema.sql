@@ -127,7 +127,8 @@ CREATE TABLE order_items (
     product_name    VARCHAR(255) NOT NULL,
     unit_price      NUMERIC(12, 2) NOT NULL CHECK (unit_price >= 0),
     quantity        INTEGER NOT NULL CHECK (quantity > 0),
-    subtotal        NUMERIC(12, 2) NOT NULL CHECK (subtotal >= 0)
+    subtotal        NUMERIC(12, 2) NOT NULL CHECK (subtotal >= 0),
+    size_label      VARCHAR(100) NOT NULL DEFAULT ''   -- kích thước đã mua, để hoàn tồn đúng size khi hủy đơn
 );
 
 CREATE INDEX idx_order_items_order_id ON order_items(order_id);

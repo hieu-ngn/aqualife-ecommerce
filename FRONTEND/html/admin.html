@@ -843,8 +843,8 @@
             <input id="prod-form-price" class="adm-input" type="number" min="0" step="1000" required placeholder="350000" />
           </div>
           <div class="field-group">
-            <label for="prod-form-stock"><strong>Tồn kho sinh thái (Cá thể) *</strong></label>
-            <input id="prod-form-stock" class="adm-input" type="number" min="0" step="1" required placeholder="25" />
+            <label for="prod-form-stock"><strong>Tổng tồn kho (tự cộng từ các kích thước)</strong></label>
+            <input id="prod-form-stock" class="adm-input" type="number" min="0" step="1" readonly title="Nhập số lượng ở từng kích thước bên dưới" />
           </div>
         </div>
         <div class="field-group prod-sizes-builder">
@@ -859,6 +859,7 @@
               </button>
             </div>
           </div>
+          <div class="prod-size-colhead"><span>Tên kích thước</span><span>Giá (VNĐ)</span><span>Số lượng</span><span></span></div>
           <div id="prod-sizes-list" class="prod-sizes-list"></div>
         </div>
         <div class="field-grid">
@@ -900,7 +901,7 @@
           <input id="bulk-fixed-price" class="adm-input" type="number" min="0" step="1000" placeholder="Để trống nếu không đặt đồng giá" />
         </div>
         <div class="field-group">
-          <label for="bulk-stock-delta"><strong>Bổ sung / trừ tồn kho đồng loạt (VD: +10 hoặc -5 cá thể)</strong></label>
+          <label for="bulk-stock-delta"><strong>Bổ sung / trừ tồn kho đồng loạt cho MỖI kích thước (VD: +10 hoặc -5)</strong></label>
           <input id="bulk-stock-delta" class="adm-input" type="number" step="1" placeholder="0" />
         </div>
         <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">

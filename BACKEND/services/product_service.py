@@ -15,7 +15,30 @@ def _round_vnd(val: float) -> int:
     return int(round(val / 5000.0) * 5000)
 
 
-def _normalize_sizes(raw_sizes, base_price=0) -> list[dict]:
+def _to_stock(value):
+    """Ép về số nguyên >= 0; None nếu không có giá trị hợp lệ."""
+    if value is None or value == "" or isinstance(value, bool):
+        return None
+    try:
+        return max(0, int(Decimal(str(value))))
+    except Exception:
+        return None
+
+
+def _distribute(total: int, count: int) -> list[int]:
+    """Chia đều `total` cho `count` mục, phần dư dồn vào mục đầu."""
+    if count <= 0:
+        return []
+    base, rem = divmod(max(0, int(total or 0)), count)
+    return [base + (rem if i == 0 else 0) for i in range(count)]
+
+
+def _normalize_sizes(raw_sizes, base_price=0, total_stock=None) -> list[dict]:
+    """Chuẩn hóa danh sách size: [{size, price, stock}].
+
+    Tồn kho nằm ở TỪNG size. Dữ liệu cũ chưa có `stock` ở size sẽ được chia đều từ
+    `total_stock` (tồn kho cấp sản phẩm) để vẫn dùng được mà không cần migrate.
+    """
     parsed = raw_sizes
     if isinstance(raw_sizes, str):
         try:
@@ -37,28 +60,74 @@ def _normalize_sizes(raw_sizes, base_price=0) -> list[dict]:
                 p_val = _serialize_number(Decimal(str(base_price or 0)))
             if p_val < 0:
                 p_val = 0
-            cleaned.append({"size": label, "price": p_val})
+            cleaned.append({"size": label, "price": p_val, "stock": _to_stock(item.get("stock"))})
 
     if not cleaned:
         p = float(base_price or 0)
         cleaned = [
-            {"size": "Size S - Nhỏ (2 - 3cm)", "price": int(p)},
-            {"size": "Size M - Trung (4 - 6cm)", "price": _round_vnd(p * 1.4)},
-            {"size": "Size L - Trưởng thành (7 - 10cm)", "price": _round_vnd(p * 1.85)},
+            {"size": "Size S - Nhỏ (2 - 3cm)", "price": int(p), "stock": None},
+            {"size": "Size M - Trung (4 - 6cm)", "price": _round_vnd(p * 1.4), "stock": None},
+            {"size": "Size L - Trưởng thành (7 - 10cm)", "price": _round_vnd(p * 1.85), "stock": None},
         ]
+
+    missing = [i for i, x in enumerate(cleaned) if x["stock"] is None]
+    if missing:
+        if len(missing) == len(cleaned):  # dữ liệu cũ: chia đều tồn kho sản phẩm
+            for i, v in zip(missing, _distribute(_to_stock(total_stock) or 0, len(missing))):
+                cleaned[i]["stock"] = v
+        else:  # có size mới chưa nhập tồn => 0
+            for i in missing:
+                cleaned[i]["stock"] = 0
     return cleaned
+
+
+def sizes_total_stock(sizes: list[dict]) -> int:
+    return sum(int(x.get("stock") or 0) for x in sizes)
+
+
+def find_size(sizes: list[dict], selected_size: str | None) -> dict:
+    """Size khách chọn (không phân biệt hoa thường); không khớp thì lấy size đầu."""
+    target = (selected_size or "").strip().lower()
+    if target:
+        for s in sizes:
+            if s["size"].strip().lower() == target:
+                return s
+    return sizes[0]
 
 
 def resolve_size_price(product_row: dict, selected_size: str | None = None) -> tuple[str, Decimal]:
     """Return (resolved_size_label, authoritative_unit_price) for a product."""
     base_price = Decimal(str(product_row.get("price") or 0))
-    sizes = _normalize_sizes(product_row.get("sizes"), base_price)
-    if selected_size:
-        target = selected_size.strip().lower()
-        for s in sizes:
-            if s["size"].strip().lower() == target:
-                return s["size"], Decimal(str(s["price"]))
-    return (selected_size or "").strip(), base_price
+    sizes = _normalize_sizes(product_row.get("sizes"), base_price, product_row.get("stock"))
+    chosen = find_size(sizes, selected_size)
+    return chosen["size"], Decimal(str(chosen["price"]))
+
+
+def resolve_size(product_row: dict, selected_size: str | None = None) -> dict:
+    """Trả {label, price, stock} của size được chọn, tồn kho tính theo từng size."""
+    base_price = Decimal(str(product_row.get("price") or 0))
+    sizes = _normalize_sizes(product_row.get("sizes"), base_price, product_row.get("stock"))
+    chosen = find_size(sizes, selected_size)
+    return {"label": chosen["size"], "price": Decimal(str(chosen["price"])), "stock": int(chosen["stock"])}
+
+
+def change_size_stock(cur, product_id: int, size_label: str | None, delta: int) -> None:
+    """Cộng/trừ tồn kho của MỘT size, đồng bộ lại tổng tồn kho sản phẩm.
+
+    Phải gọi trong transaction. Khoá dòng sản phẩm để tránh hai đơn cùng trừ một lúc.
+    Không bao giờ để tồn kho âm.
+    """
+    cur.execute("SELECT price, sizes, stock FROM products WHERE id = %s FOR UPDATE", (product_id,))
+    row = cur.fetchone()
+    if not row:
+        return
+    sizes = _normalize_sizes(row["sizes"], row["price"], row["stock"])
+    target = find_size(sizes, size_label)
+    target["stock"] = max(0, int(target["stock"]) + int(delta))
+    cur.execute(
+        "UPDATE products SET sizes = %s::jsonb, stock = %s WHERE id = %s",
+        (json.dumps(sizes, ensure_ascii=False), sizes_total_stock(sizes), product_id),
+    )
 
 
 def _serialize_category(row):
@@ -89,7 +158,7 @@ def _serialize_product(row):
     cat_name = row.get("category_name") or ""
     species = row.get("species") or CATEGORY_TO_SPECIES.get(cat_name, "Cá")
     base_price = _serialize_number(row["price"])
-    sizes = _normalize_sizes(row.get("sizes"), base_price)
+    sizes = _normalize_sizes(row.get("sizes"), base_price, row.get("stock"))
     return {
         "id": row["id"],
         "category_id": row["category_id"],

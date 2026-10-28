@@ -190,3 +190,8 @@
 /* bảng sản phẩm gọn hơn để thấy đủ cột */
 .creature-table td, .creature-table th { padding-left: 10px; padding-right: 10px; }
 .creature-table .cat-system-pill { white-space: nowrap; }
+
+/* cột tiêu đề của hàng kích thước trong form sản phẩm */
+.prod-size-colhead { display: grid; grid-template-columns: 1.6fr 1fr 0.7fr 34px; gap: 8px; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: .04em; margin: 2px 0 6px; }
+.prod-size-stock-input { width: 100%; min-width: 0; }
+.admin-table-size-pill.is-out { background: #ffe4e6; color: #b42318; }

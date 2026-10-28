@@ -1099,7 +1099,7 @@ body.admin-body {
 
 .prod-size-row {
   display: grid;
-  grid-template-columns: 1.5fr 1fr auto;
+  grid-template-columns: 1.6fr 1fr 0.7fr auto;
   gap: 8px;
   align-items: center;
 }

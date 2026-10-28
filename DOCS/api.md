@@ -340,3 +340,15 @@ Product not found:
   "message": "Product not found"
 }
 ```
+
+### Per-size stock (sizes)
+
+Each product has `sizes: [{ "size": "...", "price": 0, "stock": 0 }]`. **Stock is tracked per size**;
+`products.stock` is always the sum of the sizes' stock (kept in sync by the backend).
+
+- `POST/PUT /api/admin/products`: send `sizes` with a `stock` per size (integer >= 0, otherwise `422`).
+  The top-level `stock` is ignored when `sizes` carry stock.
+- Cart and checkout validate stock of the **selected size** and only decrease that size.
+- Cancelling an order gives the quantity back to the same size (`order_items.size_label`).
+- `POST /api/admin/products/bulk` with `stock_delta` adds/subtracts that amount on **every** size (never below 0).
+- Legacy products without per-size stock are split evenly from the old total on first read.

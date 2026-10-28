@@ -75,7 +75,10 @@ def _fetch_cart_payload(cur, cart_id: int, user_id: int) -> dict:
     total_amount = Decimal("0")
     total_quantity = 0
 
+    from services.product_service import resolve_size
+
     for r in rows:
+        size_stock = resolve_size(r, r.get("selected_size"))["stock"]
         effective_price = r.get("unit_price") if r.get("unit_price") is not None else r["price"]
         subtotal = r["subtotal"] or Decimal("0")
         total_amount += subtotal
@@ -87,7 +90,7 @@ def _fetch_cart_payload(cur, cart_id: int, user_id: int) -> dict:
                 "name": r["name"],
                 "selected_size": r.get("selected_size") or "",
                 "price": _serialize_number(effective_price),
-                "stock": r["stock"],
+                "stock": size_stock,
                 "image": r.get("image"),
                 "status": r["status"],
                 "quantity": r["quantity"],
@@ -116,7 +119,7 @@ def add_to_cart(
     quantity: int,
     selected_size: str | None = None,
 ) -> dict:
-    from services.product_service import resolve_size_price
+    from services.product_service import resolve_size
 
     if quantity <= 0:
         raise ValueError("Số lượng phải lớn hơn 0")
@@ -137,7 +140,9 @@ def add_to_cart(
         if not product or product["status"] != "active":
             raise ProductNotFoundError()
 
-        resolved_size, resolved_price = resolve_size_price(product, selected_size)
+        chosen = resolve_size(product, selected_size)
+        resolved_price = chosen["price"]
+        resolved_size = chosen["label"] if (selected_size or "").strip() else ""
 
         cur.execute(
             """
@@ -151,8 +156,11 @@ def add_to_cart(
         current_qty = existing["quantity"] if existing else 0
         new_qty = current_qty + quantity
 
-        if new_qty > product["stock"]:
-            raise InsufficientStockError(product["name"], product["stock"])
+        # tồn kho tính theo TỪNG kích thước
+        if existing and (existing.get("selected_size") or "").strip().lower() != resolved_size.strip().lower() and resolved_size:
+            new_qty = quantity  # đổi size => tính lại số lượng cho size mới
+        if new_qty > chosen["stock"]:
+            raise InsufficientStockError(f"{product['name']} ({chosen['label']})", chosen["stock"])
 
         final_size = resolved_size if resolved_size else (existing.get("selected_size") or "" if existing else "")
         final_price = resolved_price if resolved_size or not existing or existing.get("unit_price") is None else existing["unit_price"]
@@ -179,7 +187,7 @@ def update_cart_item(user_id: int, item_or_product_id: int, quantity: int) -> di
 
         cur.execute(
             """
-            SELECT id, product_id, quantity
+            SELECT id, product_id, quantity, selected_size
             FROM cart_items
             WHERE cart_id = %s AND id = %s
             """,
@@ -189,7 +197,7 @@ def update_cart_item(user_id: int, item_or_product_id: int, quantity: int) -> di
         if not item:
             cur.execute(
                 """
-                SELECT id, product_id, quantity
+                SELECT id, product_id, quantity, selected_size
                 FROM cart_items
                 WHERE cart_id = %s AND product_id = %s
                 """,
@@ -206,7 +214,7 @@ def update_cart_item(user_id: int, item_or_product_id: int, quantity: int) -> di
 
         cur.execute(
             """
-            SELECT id, name, stock, status
+            SELECT id, name, price, sizes, stock, status
             FROM products
             WHERE id = %s
             FOR UPDATE
@@ -217,8 +225,11 @@ def update_cart_item(user_id: int, item_or_product_id: int, quantity: int) -> di
         if not product or product["status"] != "active":
             raise ProductNotFoundError()
 
-        if quantity > product["stock"]:
-            raise InsufficientStockError(product["name"], product["stock"])
+        from services.product_service import resolve_size
+
+        chosen = resolve_size(product, item.get("selected_size"))
+        if quantity > chosen["stock"]:
+            raise InsufficientStockError(f"{product['name']} ({chosen['label']})", chosen["stock"])
 
         cur.execute(
             "UPDATE cart_items SET quantity = %s WHERE id = %s",

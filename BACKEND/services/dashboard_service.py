@@ -8,7 +8,13 @@ from services.order_service import (
     _fetch_order_items,
     _serialize_order,
 )
-from services.product_service import _normalize_sizes, _serialize_category, _serialize_product
+from services.product_service import (
+    _normalize_sizes,
+    _serialize_category,
+    _serialize_product,
+    change_size_stock,
+    sizes_total_stock,
+)
 
 
 class CategoryNameExistsError(Exception):
@@ -307,7 +313,9 @@ def admin_create_product(
         else:
             cat = None
 
-        normalized_sizes = _normalize_sizes(sizes, price)
+        # tồn kho nhập theo từng size; `stock` chỉ dùng để chia đều khi size chưa có số lượng
+        normalized_sizes = _normalize_sizes(sizes, price, stock)
+        stock = sizes_total_stock(normalized_sizes)
         if (price is None or price == 0) and normalized_sizes:
             price = Decimal(str(normalized_sizes[0]["price"]))
 
@@ -380,15 +388,20 @@ def admin_update_product(
         new_status = status if status is not None else existing["status"]
 
         if sizes is not None:
-            new_sizes = _normalize_sizes(sizes, new_price)
-        elif price is not None and price != existing["price"]:
-            # If only price was updated without explicit sizes, scale or update first size
-            old_sizes = _normalize_sizes(existing.get("sizes"), existing["price"])
-            if old_sizes:
-                old_sizes[0]["price"] = int(new_price)
-            new_sizes = old_sizes
+            # admin gửi danh sách size kèm số lượng từng size => tổng tồn kho = tổng các size
+            new_sizes = _normalize_sizes(sizes, new_price, new_stock)
         else:
-            new_sizes = _normalize_sizes(existing.get("sizes"), new_price)
+            old_sizes = _normalize_sizes(existing.get("sizes"), existing["price"], existing["stock"])
+            if price is not None and price != existing["price"] and old_sizes:
+                old_sizes[0]["price"] = int(new_price)
+            if stock is not None and stock != existing["stock"]:
+                # chỉ gửi tổng tồn kho (client cũ): chia lại đều cho các size
+                new_sizes = _normalize_sizes(
+                    [{"size": x["size"], "price": x["price"]} for x in old_sizes], new_price, stock
+                )
+            else:
+                new_sizes = old_sizes
+        new_stock = sizes_total_stock(new_sizes)
 
         cur.execute(
             """
@@ -539,7 +552,7 @@ def admin_update_order_status(order_id: int, new_status: str) -> dict:
         if new_status == "cancelled" and current_status != "cancelled":
             cur.execute(
                 """
-                SELECT product_id, quantity
+                SELECT product_id, quantity, size_label
                 FROM order_items
                 WHERE order_id = %s AND product_id IS NOT NULL
                 ORDER BY product_id ASC
@@ -547,14 +560,7 @@ def admin_update_order_status(order_id: int, new_status: str) -> dict:
                 (order_id,),
             )
             for item in cur.fetchall():
-                cur.execute(
-                    """
-                    UPDATE products
-                    SET stock = stock + %s
-                    WHERE id = %s
-                    """,
-                    (item["quantity"], item["product_id"]),
-                )
+                change_size_stock(cur, item["product_id"], item["size_label"], item["quantity"])
 
         items = _fetch_order_items(cur, order_id)
         return _serialize_order(updated_order, items)
@@ -727,15 +733,22 @@ def admin_bulk_update_products(
                 updated_count = cur.rowcount
 
             if stock_delta is not None and stock_delta != 0:
+                # cộng/trừ cho MỖI kích thước của sản phẩm (không để âm), rồi đồng bộ tổng tồn kho
                 cur.execute(
-                    """
-                    UPDATE products
-                    SET stock = GREATEST(0, stock + %s)
-                    WHERE id = ANY(%s)
-                    """,
-                    (stock_delta, clean_ids),
+                    "SELECT id, price, sizes, stock FROM products WHERE id = ANY(%s) ORDER BY id FOR UPDATE",
+                    (clean_ids,),
                 )
-                updated_count = max(updated_count, cur.rowcount)
+                touched = 0
+                for prod in cur.fetchall():
+                    sizes_list = _normalize_sizes(prod["sizes"], prod["price"], prod["stock"])
+                    for sz in sizes_list:
+                        sz["stock"] = max(0, int(sz["stock"]) + int(stock_delta))
+                    cur.execute(
+                        "UPDATE products SET sizes = %s::jsonb, stock = %s WHERE id = %s",
+                        (json.dumps(sizes_list, ensure_ascii=False), sizes_total_stock(sizes_list), prod["id"]),
+                    )
+                    touched += 1
+                updated_count = max(updated_count, touched)
 
             return {"updated_count": updated_count}
 

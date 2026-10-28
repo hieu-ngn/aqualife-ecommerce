@@ -80,6 +80,15 @@ function getProductSelectedSize(product) {
   return list[0]?.size || "";
 }
 
+// Tồn kho của MỘT kích thước (backend trả sizes[].stock). Thiếu dữ liệu thì dùng tồn kho sản phẩm.
+function getSizeStock(product, sizeLabel) {
+  if (!product) return null;
+  const list = Array.isArray(product.sizes) ? product.sizes : [];
+  const found = list.find((s) => s.size === sizeLabel) || (sizeLabel ? null : list[0]);
+  if (found && typeof found.stock === "number") return found.stock;
+  return typeof product.stock === "number" ? product.stock : null;
+}
+
 function getProductEffectivePrice(product, customSize = null) {
   if (!product) return 0;
   const list = Array.isArray(product.sizes) && product.sizes.length ? product.sizes : buildDefaultSizes(product.price);
@@ -276,14 +285,18 @@ function addToCart(productId, quantity = 1, selectedSize = null) {
   const cart = getCart();
   const currentQty = Number(cart[canonicalId] || 0);
 
-  if (product && typeof product.stock === "number") {
-    if (product.stock <= 0) {
-      showToast(`Sản phẩm "${product.name}" hiện đã hết hàng.`, "error");
+  const chosenSizeForStock =
+    selectedSize || (product ? getProductSelectedSize(product) : "");
+  const sizeStock = getSizeStock(product, chosenSizeForStock);
+  const sizeText = chosenSizeForStock ? ` (${chosenSizeForStock})` : "";
+  if (product && sizeStock !== null) {
+    if (sizeStock <= 0) {
+      showToast(`Sản phẩm "${product.name}"${sizeText} hiện đã hết hàng.`, "error");
       return false;
     }
-    if (currentQty + qty > product.stock) {
+    if (currentQty + qty > sizeStock) {
       showToast(
-        `Sản phẩm "${product.name}" chỉ còn ${product.stock} sản phẩm trong kho.`,
+        `Sản phẩm "${product.name}"${sizeText} chỉ còn ${sizeStock} sản phẩm trong kho.`,
         "error"
       );
       return false;
@@ -337,9 +350,11 @@ function updateCartItemQty(productId, newQuantity) {
     return true;
   }
 
-  if (product && typeof product.stock === "number" && qty > product.stock) {
+  const curSize = product ? getProductSelectedSize(product) : "";
+  const curStock = getSizeStock(product, curSize);
+  if (product && curStock !== null && qty > curStock) {
     showToast(
-      `Sản phẩm "${product.name}" chỉ còn tối đa ${product.stock} sản phẩm trong kho.`,
+      `Sản phẩm "${product.name}"${curSize ? ` (${curSize})` : ""} chỉ còn tối đa ${curStock} sản phẩm trong kho.`,
       "error"
     );
     return false;
@@ -521,6 +536,7 @@ window.Aqualife = {
   syncCartWithServer,
   loadProducts,
   formatCurrency,
+  getSizeStock,
   findProductById,
   updateCartBadges,
   apiFetch,

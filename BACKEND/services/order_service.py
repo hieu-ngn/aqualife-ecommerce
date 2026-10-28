@@ -1,6 +1,7 @@
 from decimal import Decimal
 from config.database import get_db_cursor
 from services.cart_service import InsufficientStockError, ProductNotFoundError
+from services.product_service import change_size_stock, resolve_size
 
 
 class EmptyCartError(Exception):
@@ -86,7 +87,6 @@ def create_order(
         raise ValueError("Phương thức thanh toán không hợp lệ")
 
     with get_db_cursor(commit=True) as cur:
-        from services.product_service import resolve_size_price
 
         # 1. Read current cart from database
         cur.execute("SELECT id FROM cart WHERE user_id = %s", (user_id,))
@@ -149,11 +149,14 @@ def create_order(
             if not product or product["status"] != "active":
                 raise ProductNotFoundError(f"Sản phẩm #{pid} không tồn tại hoặc ngừng bán")
 
-            if product["stock"] < qty:
-                raise InsufficientStockError(product["name"], product["stock"])
-
             chosen_size = requested_sizes.get(pid, "")
-            resolved_size, unit_price = resolve_size_price(product, chosen_size)
+            chosen = resolve_size(product, chosen_size)
+            unit_price = chosen["price"]
+            # khách không chọn size => giữ tên gốc; tồn kho vẫn tính theo size đầu (size nhỏ nhất)
+            resolved_size = chosen["label"] if chosen_size.strip() else ""
+            # tồn kho kiểm tra theo TỪNG kích thước
+            if chosen["stock"] < qty:
+                raise InsufficientStockError(f"{product['name']} ({chosen['label']})", chosen["stock"])
             subtotal = unit_price * Decimal(qty)
             total_amount += subtotal
 
@@ -167,6 +170,7 @@ def create_order(
                 {
                     "product_id": pid,
                     "product_name": snap_name,
+                    "size_label": resolved_size,
                     "unit_price": unit_price,
                     "quantity": qty,
                     "subtotal": subtotal,
@@ -205,9 +209,9 @@ def create_order(
                 """
                 INSERT INTO order_items (
                     order_id, product_id, product_name,
-                    unit_price, quantity, subtotal
+                    unit_price, quantity, subtotal, size_label
                 )
-                VALUES (%s, %s, %s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
                 RETURNING id, order_id, product_id, product_name,
                           unit_price, quantity, subtotal
                 """,
@@ -218,20 +222,14 @@ def create_order(
                     item["unit_price"],
                     item["quantity"],
                     item["subtotal"],
+                    item["size_label"],
                 ),
             )
             oi_row = cur.fetchone()
             oi_row["image"] = item["image"]
             created_items.append(_serialize_order_item(oi_row))
 
-            cur.execute(
-                """
-                UPDATE products
-                SET stock = stock - %s
-                WHERE id = %s
-                """,
-                (item["quantity"], item["product_id"]),
-            )
+            change_size_stock(cur, item["product_id"], item["size_label"], -item["quantity"])
 
         # 6. Clear cart
         if cart_id is not None:
@@ -339,7 +337,7 @@ def cancel_order_for_user(user_id: int, order_id: int) -> dict:
         # Restore stock for all items in the cancelled order
         cur.execute(
             """
-            SELECT product_id, quantity
+            SELECT product_id, quantity, size_label
             FROM order_items
             WHERE order_id = %s AND product_id IS NOT NULL
             ORDER BY product_id ASC
@@ -347,14 +345,7 @@ def cancel_order_for_user(user_id: int, order_id: int) -> dict:
             (order_id,),
         )
         for item in cur.fetchall():
-            cur.execute(
-                """
-                UPDATE products
-                SET stock = stock + %s
-                WHERE id = %s
-                """,
-                (item["quantity"], item["product_id"]),
-            )
+            change_size_stock(cur, item["product_id"], item["size_label"], item["quantity"])
 
         items = _fetch_order_items(cur, order_id)
         return _serialize_order(updated_order, items)

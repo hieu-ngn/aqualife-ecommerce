@@ -9,6 +9,14 @@ from config.database import get_db_cursor, init_pool
 FRONTEND_DIR = Path(__file__).resolve().parent.parent / "FRONTEND"
 
 
+def _ensure_schema():
+    """Nâng cấp CSDL cũ không cần chạy tay: thêm cột size_label cho order_items."""
+    with get_db_cursor(commit=True) as cur:
+        cur.execute(
+            "ALTER TABLE order_items ADD COLUMN IF NOT EXISTS size_label VARCHAR(100) NOT NULL DEFAULT ''"
+        )
+
+
 def create_app():
     app = Flask(__name__)
     app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev-secret")
@@ -26,6 +34,7 @@ def create_app():
     CORS(app, supports_credentials=True, origins=origins)
 
     init_pool(app)
+    _ensure_schema()
 
     from routes.auth_routes import auth_bp
     from routes.category_routes import category_bp

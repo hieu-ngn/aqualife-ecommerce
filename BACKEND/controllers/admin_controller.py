@@ -114,6 +114,18 @@ def list_products():
     return success(products)
 
 
+def _size_stock_error(sizes):
+    """Kiểm tra số lượng từng kích thước: phải là số nguyên >= 0."""
+    for item in sizes or []:
+        if isinstance(item, dict) and item.get("stock") not in (None, ""):
+            raw = item.get("stock")
+            if isinstance(raw, bool) or not str(raw).lstrip("-").isdigit():
+                return f"Số lượng của kích thước '{item.get('size', '')}' phải là số nguyên"
+            if int(raw) < 0:
+                return f"Số lượng của kích thước '{item.get('size', '')}' không được âm"
+    return None
+
+
 @admin_required
 def create_product():
     body = request.get_json(silent=True) or {}
@@ -152,6 +164,8 @@ def create_product():
     image = str(body.get("image") or "").strip() or "image/ocean-bg.svg"
     water_type = str(body.get("water_type") or body.get("waterType") or "Nước ngọt").strip()
     sizes = body.get("sizes") if isinstance(body.get("sizes"), list) else None
+    if _size_stock_error(sizes):
+        return error(_size_stock_error(sizes), 422)
     status = str(body.get("status") or "active").strip().lower()
     if status not in ("active", "inactive"):
         return error("Trạng thái sản phẩm không hợp lệ", 422)
@@ -225,6 +239,8 @@ def update_product(product_id: int):
         water_type = str(body["waterType"]).strip()
 
     sizes = body.get("sizes") if "sizes" in body and isinstance(body.get("sizes"), list) else None
+    if _size_stock_error(sizes):
+        return error(_size_stock_error(sizes), 422)
 
     status = (
         str(body["status"]).strip().lower()

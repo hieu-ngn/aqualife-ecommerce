@@ -59,9 +59,10 @@ document.addEventListener("DOMContentLoaded", async () => {
           (opt) => `
           <button type="button" class="size-option-btn ${
             opt.size === selectedSize ? "active" : ""
-          }" data-size="${escapeHtml(opt.size)}">
+          }" data-size="${escapeHtml(opt.size)}" ${typeof opt.stock === "number" && opt.stock <= 0 ? 'aria-disabled="true" style="opacity:.55"' : ""}>
             <span class="size-opt-name">${escapeHtml(opt.size)}</span>
             <span class="size-opt-price">${Aqualife.formatCurrency(opt.price)}</span>
+            ${typeof opt.stock === "number" ? `<span class="size-opt-stock" style="display:block;font-size:11px;color:${opt.stock <= 0 ? "#b42318" : "#5b7a8f"};">${opt.stock <= 0 ? "Hết hàng" : `Còn ${opt.stock}`}</span>` : ""}
           </button>
         `
         )
@@ -73,19 +74,28 @@ document.addEventListener("DOMContentLoaded", async () => {
           renderSizeOptions();
         });
       });
+      applySizeStock();
     }
-    renderSizeOptions();
 
-    if (typeof product.stock === "number") {
-      if (product.stock <= 0) {
+    // Số lượng tối đa và nút "Thêm vào giỏ" phụ thuộc tồn kho của kích thước đang chọn
+    const addBtnLabel = addBtn.textContent;
+    function applySizeStock() {
+      const stock = Aqualife.getSizeStock ? Aqualife.getSizeStock(product, selectedSize) : product.stock;
+      if (typeof stock !== "number") return;
+      if (stock <= 0) {
         addBtn.disabled = true;
-        addBtn.textContent = "Hết hàng";
+        addBtn.textContent = "Size này đã hết hàng";
         quantityEl.disabled = true;
         quantityEl.value = "0";
       } else {
-        quantityEl.max = String(product.stock);
+        addBtn.disabled = false;
+        addBtn.textContent = addBtnLabel;
+        quantityEl.disabled = false;
+        quantityEl.max = String(stock);
+        if (!Number(quantityEl.value) || Number(quantityEl.value) > stock) quantityEl.value = "1";
       }
     }
+    renderSizeOptions();
 
     addBtn.addEventListener("click", () => {
       const qty = Math.max(1, Number(quantityEl.value || 1));

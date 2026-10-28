@@ -66,8 +66,8 @@ function renderCart(products) {
         : product.price;
       const subtotal = unitPrice * Number(qty);
       total += subtotal;
-      const stockInfo =
-        typeof product.stock === "number" ? `Kho: ${product.stock}` : "";
+      const sizeStockNow = Aqualife.getSizeStock ? Aqualife.getSizeStock(product, selectedSize) : product.stock;
+      const stockInfo = typeof sizeStockNow === "number" ? `Kho: ${sizeStockNow}` : "";
 
       const sizesList =
         Array.isArray(product.sizes) && product.sizes.length ? product.sizes : [];
@@ -80,7 +80,7 @@ function renderCart(products) {
                   (s) =>
                     `<option value="${s.size}" ${
                       s.size === selectedSize ? "selected" : ""
-                    }>${s.size} — ${Aqualife.formatCurrency(s.price)}</option>`
+                    }${typeof s.stock === "number" && s.stock <= 0 ? " disabled" : ""}>${s.size} — ${Aqualife.formatCurrency(s.price)}${typeof s.stock === "number" ? (s.stock <= 0 ? " (hết hàng)" : ` (còn ${s.stock})`) : ""}</option>`
                 )
                 .join("")}
             </select>

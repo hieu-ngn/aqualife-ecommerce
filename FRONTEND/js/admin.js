@@ -494,7 +494,7 @@ function renderProductTablePage() {
             ${productSizes
               .map(
                 (s) =>
-                  `<span class="admin-table-size-pill"><b>${esc(s.size)}</b>: ${new Intl.NumberFormat("vi-VN").format(s.price || 0)}đ</span>`
+                  `<span class="admin-table-size-pill ${Number(s.stock) <= 0 ? "is-out" : ""}"><b>${esc(s.size)}</b>: ${new Intl.NumberFormat("vi-VN").format(s.price || 0)}đ · ${Number(s.stock) <= 0 ? "hết" : "SL " + Number(s.stock)}</span>`
               )
               .join("")}
           </div>
@@ -622,7 +622,23 @@ function generateSuggestedSizes(basePrice) {
   ];
 }
 
-function addSizeRowToModal(sizeLabel = "", sizePrice = 0) {
+function distributeStock(total, count) {
+  const t = Math.max(0, Math.floor(Number(total) || 0));
+  const base = Math.floor(t / count);
+  return Array.from({ length: count }, (_, i) => base + (i === 0 ? t - base * count : 0));
+}
+
+// Tổng tồn kho = cộng số lượng của từng kích thước (ô tổng chỉ đọc)
+function updateModalTotalStock() {
+  const total = Array.from(document.querySelectorAll("#prod-sizes-list .prod-size-stock-input")).reduce(
+    (sum, el) => sum + Math.max(0, Math.floor(Number(el.value) || 0)),
+    0
+  );
+  const out = document.getElementById("prod-form-stock");
+  if (out) out.value = String(total);
+}
+
+function addSizeRowToModal(sizeLabel = "", sizePrice = 0, sizeStock = 0) {
   const listEl = document.getElementById("prod-sizes-list");
   if (!listEl) return;
 
@@ -630,11 +646,13 @@ function addSizeRowToModal(sizeLabel = "", sizePrice = 0) {
   row.className = "prod-size-row";
   row.innerHTML = `
     <input type="text" class="prod-size-name-input" placeholder="VD: Size M - Trung (4 - 6cm)" value="${esc(sizeLabel)}" required />
-    <input type="number" class="prod-size-price-input" min="0" step="1000" placeholder="Giá (VNĐ)" value="${Number(sizePrice || 0)}" required />
+    <input type="number" class="prod-size-price-input" min="0" step="1000" placeholder="Giá (VNĐ)" title="Giá của kích thước này" value="${Number(sizePrice || 0)}" required />
+    <input type="number" class="prod-size-stock-input" min="0" step="1" placeholder="Số lượng" title="Số lượng tồn của kích thước này" value="${Math.max(0, Math.floor(Number(sizeStock) || 0))}" required />
     <button type="button" class="prod-size-remove-btn" title="Xóa kích thước này">
       <i class="fa-solid fa-trash-can"></i>
     </button>
   `;
+  row.querySelector(".prod-size-stock-input")?.addEventListener("input", updateModalTotalStock);
   row.querySelector(".prod-size-remove-btn")?.addEventListener("click", () => {
     const allRows = listEl.querySelectorAll(".prod-size-row");
     if (allRows.length <= 1) {
@@ -642,18 +660,24 @@ function addSizeRowToModal(sizeLabel = "", sizePrice = 0) {
       return;
     }
     row.remove();
+    updateModalTotalStock();
   });
   listEl.appendChild(row);
+  updateModalTotalStock();
 }
 
-function renderSizeRowsInModal(sizes = [], fallbackBasePrice = 150000) {
+function renderSizeRowsInModal(sizes = [], fallbackBasePrice = 150000, totalStock = 0) {
   const listEl = document.getElementById("prod-sizes-list");
   if (!listEl) return;
   listEl.innerHTML = "";
   const items = Array.isArray(sizes) && sizes.length > 0 ? sizes : generateSuggestedSizes(fallbackBasePrice);
-  items.forEach((item) => {
-    addSizeRowToModal(item.size || "", item.price ?? fallbackBasePrice);
+  // size nào chưa có số lượng (dữ liệu cũ / size gợi ý) thì chia đều từ tổng tồn kho
+  const spread = distributeStock(totalStock, items.length);
+  items.forEach((item, i) => {
+    const qty = item.stock !== undefined && item.stock !== null ? item.stock : spread[i];
+    addSizeRowToModal(item.size || "", item.price ?? fallbackBasePrice, qty);
   });
+  updateModalTotalStock();
 }
 
 function collectSizeRowsFromModal(fallbackBasePrice = 150000) {
@@ -664,9 +688,13 @@ function collectSizeRowsFromModal(fallbackBasePrice = 150000) {
     .map((r) => {
       const size = r.querySelector(".prod-size-name-input")?.value.trim() || "";
       const price = Number(r.querySelector(".prod-size-price-input")?.value || 0);
-      return { size, price };
+      const stock = Math.floor(Number(r.querySelector(".prod-size-stock-input")?.value || 0));
+      return { size, price, stock };
     })
-    .filter((item) => item.size !== "" && Number.isFinite(item.price) && item.price >= 0);
+    .filter(
+      (item) =>
+        item.size !== "" && Number.isFinite(item.price) && item.price >= 0 && Number.isFinite(item.stock) && item.stock >= 0
+    );
   return parsed.length > 0 ? parsed : generateSuggestedSizes(fallbackBasePrice);
 }
 
@@ -689,7 +717,7 @@ function openProductModal(prod = null) {
     document.getElementById("prod-form-stock").value = String(prod.stock ?? 0);
     document.getElementById("prod-form-image").value = prod.image || "";
     document.getElementById("prod-form-desc").value = prod.description || "";
-    renderSizeRowsInModal(prod.sizes, Number(prod.price || 150000));
+    renderSizeRowsInModal(prod.sizes, Number(prod.price || 150000), Number(prod.stock || 0));
   } else {
     document.getElementById("product-modal-title").textContent = "Thêm cá thể / sản phẩm mới";
     document.getElementById("prod-form-id").value = "";
@@ -702,7 +730,7 @@ function openProductModal(prod = null) {
     document.getElementById("prod-form-stock").value = "25";
     document.getElementById("prod-form-image").value = "image/ocean-bg.svg";
     document.getElementById("prod-form-desc").value = "";
-    renderSizeRowsInModal(generateSuggestedSizes(150000), 150000);
+    renderSizeRowsInModal(generateSuggestedSizes(150000), 150000, 25);
   }
   modal.classList.remove("hidden");
 }
@@ -960,12 +988,12 @@ function bindCatalogEvents() {
   });
   document.getElementById("btn-add-size-row")?.addEventListener("click", () => {
     const bp = Number(document.getElementById("prod-form-price")?.value || 150000);
-    addSizeRowToModal("", bp);
+    addSizeRowToModal("", bp, 0);
   });
   document.getElementById("btn-auto-size-rows")?.addEventListener("click", () => {
     const bp = Number(document.getElementById("prod-form-price")?.value || 150000);
-    renderSizeRowsInModal(generateSuggestedSizes(bp), bp);
-    window.Aqualife.showToast("Đã tự động tạo 3 mốc kích thước S / M / L theo giá cơ sở!", "success");
+    renderSizeRowsInModal(generateSuggestedSizes(bp), bp, Number(document.getElementById("prod-form-stock")?.value || 0));
+    window.Aqualife.showToast("Đã tạo 3 mốc S / M / L theo giá cơ sở, tổng tồn kho chia đều (bạn có thể sửa từng size).", "success");
   });
   document.getElementById("product-modal-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -978,7 +1006,7 @@ function bindCatalogEvents() {
       water_type: document.getElementById("prod-form-water-type")?.value || "Nước ngọt",
       status: document.getElementById("prod-form-status").value,
       price: basePrice,
-      stock: Number(document.getElementById("prod-form-stock").value || 0),
+      stock: sizes.reduce((sum, x) => sum + (x.stock || 0), 0), // tổng = cộng các kích thước
       image: document.getElementById("prod-form-image").value.trim(),
       description: document.getElementById("prod-form-desc").value.trim(),
       sizes,
@@ -1385,8 +1413,8 @@ function renderLowStockReplenishment() {
         <td><strong style="color:#dc2626;">${p.stock} cá thể</strong></td>
         <td>
           <div class="row-actions" style="margin-top:0;">
-            <button type="button" class="btn-row-icon btn-quick-restock" data-id="${p.id}" data-add="15">+15 cá thể</button>
-            <button type="button" class="btn-row-icon btn-quick-restock" data-id="${p.id}" data-add="30">+30 cá thể</button>
+            <button type="button" class="btn-row-icon btn-quick-restock" data-id="${p.id}" data-add="15" title="Cộng 15 cho mỗi kích thước">+15 / mỗi size</button>
+            <button type="button" class="btn-row-icon btn-quick-restock" data-id="${p.id}" data-add="30" title="Cộng 30 cho mỗi kích thước">+30 / mỗi size</button>
           </div>
         </td>
       </tr>
