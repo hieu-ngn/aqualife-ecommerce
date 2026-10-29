@@ -407,7 +407,15 @@ def bulk_update_products():
 
 @admin_required
 def get_revenue():
-    return success(dashboard_service.get_revenue_report())
+    try:
+        report = dashboard_service.get_revenue_report(
+            date_from=(request.args.get("from") or "").strip() or None,
+            date_to=(request.args.get("to") or "").strip() or None,
+            group_by=(request.args.get("group_by") or "day").strip().lower(),
+        )
+        return success(report)
+    except dashboard_service.InvalidRevenueFilterError as exc:
+        return error(str(exc), 422)
 
 
 def get_public_store_info():
@@ -430,3 +438,75 @@ def update_settings():
     return success(updated)
 
 
+
+
+
+# ============================================================
+# Single-resource detail & focused PATCH endpoints
+# ============================================================
+@admin_required
+def get_product(product_id: int):
+    try:
+        return success(dashboard_service.admin_get_product(product_id))
+    except ProductNotFoundError:
+        return error("Không tìm thấy sản phẩm", 404)
+
+
+@admin_required
+def update_product_status(product_id: int):
+    body = request.get_json(silent=True) or {}
+    status = str(body.get("status") or "").strip().lower() if isinstance(body, dict) else ""
+    if status not in ("active", "inactive"):
+        return error("Trạng thái sản phẩm chỉ nhận 'active' hoặc 'inactive'", 422)
+    try:
+        return success(dashboard_service.admin_update_product(product_id, status=status))
+    except ProductNotFoundError:
+        return error("Không tìm thấy sản phẩm", 404)
+
+
+@admin_required
+def update_product_stock(product_id: int):
+    body = request.get_json(silent=True) or {}
+    if not isinstance(body, dict) or "stock" not in body:
+        return error("Vui lòng nhập tồn kho (stock)", 422)
+    raw = body["stock"]
+    if isinstance(raw, bool) or not isinstance(raw, (int, str)):
+        return error("Tồn kho (stock) phải là số nguyên", 422)
+    try:
+        stock = int(raw)
+    except (TypeError, ValueError):
+        return error("Tồn kho (stock) phải là số nguyên", 422)
+    if stock < 0:
+        return error("Tồn kho (stock) không được âm", 422)
+    try:
+        return success(dashboard_service.admin_update_product(product_id, stock=stock))
+    except ProductNotFoundError:
+        return error("Không tìm thấy sản phẩm", 404)
+
+
+@admin_required
+def update_category_status(category_id: int):
+    body = request.get_json(silent=True) or {}
+    status = str(body.get("status") or "").strip().lower() if isinstance(body, dict) else ""
+    if status not in ("active", "inactive"):
+        return error("Trạng thái danh mục chỉ nhận 'active' hoặc 'inactive'", 422)
+    try:
+        return success(dashboard_service.admin_update_category(category_id, status=status))
+    except dashboard_service.CategoryNotFoundError:
+        return error("Không tìm thấy danh mục", 404)
+
+
+@admin_required
+def get_order(order_id: int):
+    try:
+        return success(dashboard_service.admin_get_order(order_id))
+    except OrderNotFoundError:
+        return error("Không tìm thấy đơn hàng", 404)
+
+
+@admin_required
+def get_user(user_id: int):
+    try:
+        return success(dashboard_service.admin_get_user(user_id))
+    except UserNotFoundError:
+        return error("Không tìm thấy người dùng", 404)

@@ -166,5 +166,5 @@ Mọi API trả về JSON thống nhất qua `utils/responses.py`:
 - **Trang Liên hệ & Unified Web Server (Đã hoàn thành)**:
   - Hoàn thiện trang `contact.html` (`contact.css`, `contact.js`).
   - Cấu hình `BACKEND/app.py` phục vụ trực tiếp cả Frontend lẫn REST API tại `http://localhost:5000`.
-  - Kiểm thử tự động toàn bộ dự án bằng `pytest` (`9 passed` trên `test_m08_shop_orders.py` và `test_full_project.py`).
+  - Kiểm thử tự động toàn bộ dự án bằng `pytest` (`15 passed` trên `test_m08_shop_orders.py`, `test_full_project.py` và `test_admin_api.py`).
 

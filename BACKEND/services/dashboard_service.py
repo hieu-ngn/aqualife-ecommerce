@@ -56,7 +56,8 @@ def get_dashboard_overview() -> dict:
             SELECT
                 COUNT(*) AS total_users,
                 COUNT(*) FILTER (WHERE status = 'active') AS active_users,
-                COUNT(*) FILTER (WHERE role = 'admin') AS admin_users
+                COUNT(*) FILTER (WHERE role = 'admin') AS admin_users,
+                COUNT(*) FILTER (WHERE role = 'customer') AS total_customers
             FROM users
             """
         )
@@ -81,6 +82,13 @@ def get_dashboard_overview() -> dict:
             SELECT
                 COUNT(*) AS total_orders,
                 COALESCE(SUM(total_amount) FILTER (WHERE status = 'completed'), 0) AS completed_revenue,
+                COALESCE(SUM(total_amount) FILTER (
+                    WHERE status = 'completed' AND updated_at::date = CURRENT_DATE
+                ), 0) AS today_revenue,
+                COALESCE(SUM(total_amount) FILTER (
+                    WHERE status = 'completed'
+                      AND date_trunc('month', updated_at) = date_trunc('month', NOW())
+                ), 0) AS monthly_revenue,
                 COALESCE(SUM(total_amount) FILTER (WHERE status != 'cancelled'), 0) AS active_revenue,
                 COUNT(*) FILTER (WHERE status = 'pending') AS pending_orders,
                 COUNT(*) FILTER (WHERE status = 'confirmed') AS confirmed_orders,
@@ -147,6 +155,7 @@ def get_dashboard_overview() -> dict:
             "total_users": int(user_stats["total_users"] or 0),
             "active_users": int(user_stats["active_users"] or 0),
             "admin_users": int(user_stats["admin_users"] or 0),
+            "total_customers": int(user_stats["total_customers"] or 0),
             "total_products": int(product_stats["total_products"] or 0),
             "active_products": int(product_stats["active_products"] or 0),
             "low_stock_products": int(product_stats["low_stock_products"] or 0),
@@ -154,6 +163,9 @@ def get_dashboard_overview() -> dict:
             "total_orders": int(order_stats["total_orders"] or 0),
             "total_revenue": _serialize_number(order_stats["completed_revenue"] or 0),
             "active_revenue": _serialize_number(order_stats["active_revenue"] or 0),
+            "today_revenue": _serialize_number(order_stats["today_revenue"] or 0),
+            "monthly_revenue": _serialize_number(order_stats["monthly_revenue"] or 0),
+            "completed_orders": int(order_stats["completed_orders"] or 0),
             "orders_by_status": {
                 "pending": int(order_stats["pending_orders"] or 0),
                 "confirmed": int(order_stats["confirmed_orders"] or 0),
@@ -742,10 +754,48 @@ def admin_bulk_update_products(
     raise ValueError(f"Hành động hàng loạt '{action}' không hợp lệ")
 
 
-def get_revenue_report() -> dict:
+class InvalidRevenueFilterError(Exception):
+    pass
+
+
+def get_revenue_report(
+    date_from: str | None = None,
+    date_to: str | None = None,
+    group_by: str = "day",
+) -> dict:
+    """Revenue is counted only for completed orders, dated by completion
+    (orders.updated_at, since 'completed' is a terminal status)."""
+    from datetime import date
+
+    if group_by not in ("day", "month"):
+        raise InvalidRevenueFilterError("group_by chỉ nhận 'day' hoặc 'month'")
+
+    def _parse(value, label):
+        if not value:
+            return None
+        try:
+            return date.fromisoformat(value)
+        except ValueError:
+            raise InvalidRevenueFilterError(f"{label} phải có dạng YYYY-MM-DD")
+
+    d_from = _parse(date_from, "from")
+    d_to = _parse(date_to, "to")
+    if d_from and d_to and d_from > d_to:
+        raise InvalidRevenueFilterError("Ngày bắt đầu phải nhỏ hơn hoặc bằng ngày kết thúc")
+
+    conditions = ["o.status = 'completed'"]
+    params: list = []
+    if d_from:
+        conditions.append("o.updated_at::date >= %s")
+        params.append(d_from)
+    if d_to:
+        conditions.append("o.updated_at::date <= %s")
+        params.append(d_to)
+    where = " AND ".join(conditions)
+
     with get_db_cursor() as cur:
         cur.execute(
-            """
+            f"""
             SELECT
                 COALESCE(c.name, 'Chưa phân loại') AS category_name,
                 COUNT(DISTINCT o.id) AS order_count,
@@ -755,10 +805,11 @@ def get_revenue_report() -> dict:
             JOIN orders o ON o.id = oi.order_id
             LEFT JOIN products p ON p.id = oi.product_id
             LEFT JOIN categories c ON c.id = p.category_id
-            WHERE o.status != 'cancelled'
+            WHERE {where}
             GROUP BY COALESCE(c.name, 'Chưa phân loại')
             ORDER BY revenue DESC
-            """
+            """,
+            params,
         )
         by_category = [
             {
@@ -771,15 +822,15 @@ def get_revenue_report() -> dict:
         ]
 
         cur.execute(
-            """
-            SELECT
-                payment_method,
-                COUNT(*) AS order_count,
-                COALESCE(SUM(total_amount), 0) AS revenue
-            FROM orders
-            WHERE status != 'cancelled'
-            GROUP BY payment_method
-            """
+            f"""
+            SELECT o.payment_method,
+                   COUNT(*) AS order_count,
+                   COALESCE(SUM(o.total_amount), 0) AS revenue
+            FROM orders o
+            WHERE {where}
+            GROUP BY o.payment_method
+            """,
+            params,
         )
         by_payment = [
             {
@@ -790,10 +841,93 @@ def get_revenue_report() -> dict:
             for r in cur.fetchall()
         ]
 
-        return {
-            "by_category": by_category,
-            "by_payment": by_payment,
-        }
+        fmt = "YYYY-MM" if group_by == "month" else "YYYY-MM-DD"
+        cur.execute(
+            f"""
+            SELECT to_char(o.updated_at, '{fmt}') AS period,
+                   COUNT(*) AS order_count,
+                   COALESCE(SUM(o.total_amount), 0) AS revenue
+            FROM orders o
+            WHERE {where}
+            GROUP BY period
+            ORDER BY period ASC
+            """,
+            params,
+        )
+        series = [
+            {
+                "period": r["period"],
+                "order_count": int(r["order_count"] or 0),
+                "revenue": _serialize_number(r["revenue"] or 0),
+            }
+            for r in cur.fetchall()
+        ]
+
+    return {
+        "basis": "completed",
+        "group_by": group_by,
+        "from": d_from.isoformat() if d_from else None,
+        "to": d_to.isoformat() if d_to else None,
+        "total_revenue": _serialize_number(sum(item["revenue"] for item in series)),
+        "series": series,
+        "by_category": by_category,
+        "by_payment": by_payment,
+    }
+
+
+# ============================================================
+# Admin detail lookups (single resource)
+# ============================================================
+def admin_get_product(product_id: int) -> dict:
+    from services.cart_service import ProductNotFoundError
+
+    with get_db_cursor() as cur:
+        cur.execute(
+            """
+            SELECT p.id, p.category_id, c.name AS category_name,
+                   p.name, p.description, p.price, p.sizes, p.stock, p.image,
+                   p.water_type, p.status, p.created_at, p.updated_at
+            FROM products p
+            LEFT JOIN categories c ON c.id = p.category_id
+            WHERE p.id = %s
+            """,
+            (product_id,),
+        )
+        row = cur.fetchone()
+    if not row:
+        raise ProductNotFoundError()
+    return _serialize_product(row)
+
+
+def admin_get_order(order_id: int) -> dict:
+    with get_db_cursor() as cur:
+        cur.execute(
+            """
+            SELECT o.id, o.user_id, u.name AS user_name, u.email AS user_email,
+                   o.total_amount, o.status, o.shipping_name, o.shipping_phone,
+                   o.shipping_address, o.payment_method, o.created_at, o.updated_at
+            FROM orders o
+            LEFT JOIN users u ON u.id = o.user_id
+            WHERE o.id = %s
+            """,
+            (order_id,),
+        )
+        row = cur.fetchone()
+        if not row:
+            raise OrderNotFoundError()
+        data = _serialize_order(row, _fetch_order_items(cur, order_id))
+        data["user_name"] = row.get("user_name")
+        data["user_email"] = row.get("user_email")
+        return data
+
+
+def admin_get_user(user_id: int) -> dict:
+    from services.user_service import UserNotFoundError
+
+    users = [u for u in admin_list_users() if u["id"] == user_id]
+    if not users:
+        raise UserNotFoundError()
+    return users[0]
 
 
 # ============================================================
