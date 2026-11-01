@@ -3,6 +3,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   const orderTotalEl = document.getElementById("order-total");
   const placeOrderBtn = document.getElementById("place-order");
   const feedbackEl = document.getElementById("order-feedback");
+  const vietqrBoxEl = document.getElementById("vietqr-box");
+  const vietqrImgEl = document.getElementById("vietqr-img");
+  const vietqrNoteEl = document.getElementById("vietqr-note");
 
   const formFields = {
     firstName: document.getElementById("first-name"),
@@ -15,6 +18,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
 
   let products = [];
+  let currentTotalAmount = 0;
 
   function showFeedback(type, message) {
     if (!feedbackEl) return;
@@ -27,6 +31,28 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (!feedbackEl) return;
     feedbackEl.className = "alert hidden";
     feedbackEl.textContent = "";
+  }
+
+  function updateVietQRPreview() {
+    if (!vietqrBoxEl || !vietqrImgEl) return;
+    const selectedRadio = document.querySelector('input[name="payment"]:checked');
+    const isTransfer = selectedRadio && selectedRadio.value === "transfer";
+
+    if (!isTransfer || currentTotalAmount <= 0) {
+      vietqrBoxEl.classList.add("hidden");
+      return;
+    }
+
+    const phoneVal = (formFields.phone?.value || "").replace(/\D/g, "") || "KHACHHANG";
+    const addInfo = encodeURIComponent(`AQUALIFE ${phoneVal}`);
+    const accountName = encodeURIComponent("AQUALIFE OCEAN CURATOR");
+    vietqrImgEl.src = `https://img.vietqr.io/image/MB-0867817946-compact2.png?amount=${currentTotalAmount}&addInfo=${addInfo}&accountName=${accountName}`;
+    if (vietqrNoteEl) {
+      vietqrNoteEl.textContent = `MB Bank • 0867817946 • Số tiền: ${Aqualife.formatCurrency(
+        currentTotalAmount
+      )}`;
+    }
+    vietqrBoxEl.classList.remove("hidden");
   }
 
   async function prefillUserInfo() {
@@ -75,7 +101,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (!entries.length) {
         orderListEl.innerHTML = "<p class='empty'>Giỏ hàng không có sản phẩm.</p>";
         orderTotalEl.textContent = Aqualife.formatCurrency(0);
+        currentTotalAmount = 0;
         placeOrderBtn.disabled = true;
+        updateVietQRPreview();
         return;
       }
 
@@ -104,8 +132,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         `;
       });
 
+      currentTotalAmount = total;
       orderListEl.innerHTML = html.join("");
       orderTotalEl.textContent = Aqualife.formatCurrency(total);
+      updateVietQRPreview();
     } catch (err) {
       console.error(err);
       orderListEl.innerHTML = "<p class='error'>Lỗi tải dữ liệu sản phẩm.</p>";
@@ -143,6 +173,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   await prefillUserInfo();
   await renderOrder();
+
+  document.querySelectorAll('input[name="payment"]').forEach((radio) => {
+    radio.addEventListener("change", updateVietQRPreview);
+  });
+  if (formFields.phone) {
+    formFields.phone.addEventListener("input", updateVietQRPreview);
+  }
 
   placeOrderBtn.addEventListener("click", async () => {
     resetFieldStyles();

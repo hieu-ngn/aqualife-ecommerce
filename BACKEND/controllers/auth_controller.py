@@ -63,8 +63,11 @@ def login():
     except auth_service.InactiveUserError:
         return error("Tài khoản đã bị khóa", 403)
 
+    guest_cart = session.get("cart")
     session.clear()
     session["user_id"] = user["id"]
+    if isinstance(guest_cart, dict) and guest_cart:
+        session["cart"] = guest_cart
     return success(user)
 
 

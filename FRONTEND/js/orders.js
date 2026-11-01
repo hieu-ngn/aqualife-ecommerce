@@ -9,7 +9,7 @@ const STATUS_LABELS = {
 
 const PAYMENT_LABELS = {
   cod: "Thanh toán khi nhận hàng (COD)",
-  bank_transfer: "Chuyển khoản ngân hàng",
+  bank_transfer: "Chuyển khoản ngân hàng (VietQR)",
 };
 
 function formatDateTime(isoStr) {
@@ -28,10 +28,22 @@ function formatDateTime(isoStr) {
   }
 }
 
+function normalizeOrderThumb(img) {
+  if (!img) return "../image/ocean-bg.svg";
+  if (img.startsWith("../") || img.startsWith("http") || img.startsWith("/")) {
+    return img.startsWith("/image/") ? `..${img}` : img;
+  }
+  return `../${img}`;
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
   const listEl = document.getElementById("orders-list");
   const emptyEl = document.getElementById("orders-empty");
   const feedbackEl = document.getElementById("orders-feedback");
+  const detailModalEl = document.getElementById("order-detail-modal");
+  const detailBodyEl = document.getElementById("order-detail-body");
+  const closeModalBtn = document.getElementById("btn-close-order-modal");
+  const printOrderBtn = document.getElementById("btn-print-order");
 
   if (!listEl || !emptyEl) return;
 
@@ -40,6 +52,110 @@ document.addEventListener("DOMContentLoaded", async () => {
     feedbackEl.className = `alert alert-${type}`;
     feedbackEl.textContent = message;
     feedbackEl.classList.remove("hidden");
+  }
+
+  if (closeModalBtn && detailModalEl) {
+    closeModalBtn.addEventListener("click", () => {
+      detailModalEl.classList.add("hidden");
+    });
+    detailModalEl.addEventListener("click", (e) => {
+      if (e.target === detailModalEl) {
+        detailModalEl.classList.add("hidden");
+      }
+    });
+  }
+
+  if (printOrderBtn) {
+    printOrderBtn.addEventListener("click", () => {
+      window.print();
+    });
+  }
+
+  // Gọi API GET /api/orders/:id để lấy chi tiết Order + OrderDetail (JOIN bảng products)
+  async function openOrderDetailModal(orderId) {
+    if (!detailModalEl || !detailBodyEl) return;
+    detailBodyEl.innerHTML = `<p class="muted">Đang tải chi tiết đơn hàng #${orderId}...</p>`;
+    detailModalEl.classList.remove("hidden");
+
+    try {
+      const order = await Aqualife.apiFetch(`/orders/${orderId}`);
+      const st = STATUS_LABELS[order.status] || {
+        text: order.status,
+        color: "#374151",
+        bg: "#f3f4f6",
+      };
+
+      const rowsHtml = (order.items || [])
+        .map(
+          (item, idx) => `
+          <tr>
+            <td style="padding:8px;border-bottom:1px solid #e2e8f0;">${idx + 1}</td>
+            <td style="padding:8px;border-bottom:1px solid #e2e8f0;">#${item.product_id || "-"}</td>
+            <td style="padding:8px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;gap:10px;">
+              <img src="${normalizeOrderThumb(item.image)}" alt="${item.product_name}" style="width:46px;height:36px;object-fit:cover;border-radius:6px;border:1px solid #cbd5e1;" />
+              <a href="product-detail.html?id=${item.product_id}" style="font-weight:600;color:#0369a1;">${item.product_name}</a>
+            </td>
+            <td style="padding:8px;border-bottom:1px solid #e2e8f0;text-align:right;">${Aqualife.formatCurrency(item.unit_price)}</td>
+            <td style="padding:8px;border-bottom:1px solid #e2e8f0;text-align:center;font-weight:700;">${item.quantity}</td>
+            <td style="padding:8px;border-bottom:1px solid #e2e8f0;text-align:right;font-weight:700;color:#0284c7;">${Aqualife.formatCurrency(item.subtotal)}</td>
+          </tr>
+        `
+        )
+        .join("");
+
+      detailBodyEl.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #e2e8f0;padding-bottom:12px;margin-bottom:14px;">
+          <div>
+            <h2 style="margin:0;color:#0c4a6e;">Chi tiết Đơn hàng #${order.id}</h2>
+            <p class="muted" style="margin:4px 0 0 0;font-size:0.9rem;">Mã User: #${order.user_id} • Thời gian tạo: ${formatDateTime(order.created_at)}</p>
+          </div>
+          <span style="padding:6px 14px;border-radius:999px;font-weight:700;color:${st.color};background:${st.bg};">
+            ${st.text}
+          </span>
+        </div>
+
+        <div style="background:#f8fafc;padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:0.94rem;">
+          <p style="margin:4px 0;"><strong>Người nhận:</strong> ${order.shipping_name} &nbsp;|&nbsp; <strong>SĐT:</strong> ${order.shipping_phone}</p>
+          <p style="margin:4px 0;"><strong>Địa chỉ giao hàng:</strong> ${order.shipping_address}</p>
+          <p style="margin:4px 0;"><strong>Phương thức thanh toán:</strong> ${PAYMENT_LABELS[order.payment_method] || order.payment_method}</p>
+        </div>
+
+        <h4 style="margin:0 0 8px 0;">Danh sách Chi tiết Sản phẩm (OrderDetail JOIN Product)</h4>
+        <div style="overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;font-size:0.92rem;">
+            <thead>
+              <tr style="background:#e0f2fe;color:#0369a1;">
+                <th style="padding:8px;text-align:left;">STT</th>
+                <th style="padding:8px;text-align:left;">Mã SP</th>
+                <th style="padding:8px;text-align:left;">Sản phẩm</th>
+                <th style="padding:8px;text-align:right;">Đơn giá</th>
+                <th style="padding:8px;text-align:center;">SL</th>
+                <th style="padding:8px;text-align:right;">Thành tiền</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rowsHtml}
+            </tbody>
+          </table>
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;margin-top:14px;font-size:1.1rem;">
+          <strong>Tổng cộng đơn hàng: &nbsp;</strong>
+          <span class="price">${Aqualife.formatCurrency(order.total_amount)}</span>
+        </div>
+
+        <div style="margin-top:16px;padding:12px 16px;border-radius:8px;background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;font-size:0.88rem;">
+          <strong>🛡️ Chứng nhận Bảo hành Sống 100% (DOA) &amp; Quy trình thả cá an toàn:</strong>
+          <ol style="margin:6px 0 0 0;padding-left:18px;">
+            <li><strong>Bước 1 (Cân bằng nhiệt):</strong> Ngâm nguyên túi cá chưa mở vào bể khoảng 15–20 phút.</li>
+            <li><strong>Bước 2 (Quen nước):</strong> Mở túi, châm thêm từng chút nước trong bể vào túi mỗi 5 phút (lặp lại 3 lần).</li>
+            <li><strong>Bước 3 (Thả cá):</strong> Dùng vợt vớt nhẹ cá thả vào bể, không đổ nước trong túi vận chuyển vào bể.</li>
+          </ol>
+        </div>
+      `;
+    } catch (err) {
+      detailBodyEl.innerHTML = `<div class="alert alert-error">${err.message || "Không thể tải chi tiết đơn hàng."}</div>`;
+    }
   }
 
   async function loadOrders() {
@@ -67,10 +183,13 @@ document.addEventListener("DOMContentLoaded", async () => {
           const itemsHtml = (order.items || [])
             .map(
               (item) => `
-              <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed #e2e8f0;">
-                <div>
-                  <strong>${item.product_name}</strong>
-                  <span class="muted"> x ${item.quantity} (${Aqualife.formatCurrency(item.unit_price)}/sp)</span>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px dashed #e2e8f0;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <img src="${normalizeOrderThumb(item.image)}" alt="${item.product_name}" style="width:44px;height:34px;object-fit:cover;border-radius:6px;border:1px solid #e2e8f0;" />
+                  <div>
+                    <strong>${item.product_name}</strong>
+                    <span class="muted"> (Mã SP: #${item.product_id || "-"}) x ${item.quantity} (${Aqualife.formatCurrency(item.unit_price)}/sp)</span>
+                  </div>
                 </div>
                 <div class="price">${Aqualife.formatCurrency(item.subtotal)}</div>
               </div>
@@ -109,7 +228,10 @@ document.addEventListener("DOMContentLoaded", async () => {
                     ${Aqualife.formatCurrency(order.total_amount)}
                   </span>
                 </div>
-                <div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                  <button class="btn btn-ghost btn-view-order" data-id="${order.id}" type="button">
+                    🔍 Xem chi tiết &amp; Hóa đơn
+                  </button>
                   ${
                     canCancel
                       ? `<button class="btn btn-danger btn-cancel-order" data-id="${order.id}" type="button">Hủy đơn hàng</button>`
@@ -121,6 +243,13 @@ document.addEventListener("DOMContentLoaded", async () => {
           `;
         })
         .join("");
+
+      listEl.querySelectorAll(".btn-view-order").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const orderId = btn.dataset.id;
+          if (orderId) openOrderDetailModal(orderId);
+        });
+      });
 
       listEl.querySelectorAll(".btn-cancel-order").forEach((btn) => {
         btn.addEventListener("click", async () => {

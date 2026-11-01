@@ -104,6 +104,28 @@ def test_cart_requires_auth(client):
     assert res.get_json()["success"] is False
 
 
+def test_session_cart_workflow_and_zero_qty_delete(client):
+    client.delete("/api/cart/session")
+    prods = client.get("/api/products").get_json()["data"]
+    in_stock_prod = next(p for p in prods if p["stock"] >= 5)
+    pid = in_stock_prod["id"]
+
+    # 1. Add new item to Flask Session cart
+    r1 = client.post("/api/cart/session", json={"product_id": pid, "quantity": 2})
+    assert r1.status_code == 201
+    assert r1.get_json()["data"]["total_quantity"] == 2
+
+    # 2. Adding existing product increments quantity in Session
+    r2 = client.post("/api/cart/session", json={"product_id": pid, "quantity": 1})
+    assert r2.status_code == 201
+    assert r2.get_json()["data"]["total_quantity"] == 3
+
+    # 3. Updating quantity to 0 removes the item from Session cart
+    r_zero = client.put(f"/api/cart/session/{pid}", json={"quantity": 0})
+    assert r_zero.status_code == 200
+    assert r_zero.get_json()["data"]["total_quantity"] == 0
+
+
 def test_cart_crud_and_stock_validation(client):
     _register_and_login(client, "M08 Tester", TEST_EMAIL_1)
 
@@ -124,6 +146,7 @@ def test_cart_crud_and_stock_validation(client):
     cart_data = add_res.get_json()["data"]
     assert cart_data["total_quantity"] == 2
     assert cart_data["total_amount"] == in_stock_prod["price"] * 2
+    assert cart_data.get("session_synced") is True
 
     item_id = cart_data["items"][0]["id"]
 
@@ -146,10 +169,10 @@ def test_cart_crud_and_stock_validation(client):
         )
         assert zero_res.status_code == 400
 
-    # 4. Delete single item & clear cart
-    del_res = client.delete(f"/api/cart/{item_id}")
-    assert del_res.status_code == 200
-    assert del_res.get_json()["data"]["total_quantity"] == 0
+    # 4. Entering quantity = 0 deletes the item from cart
+    zero_del_res = client.put(f"/api/cart/{item_id}", json={"quantity": 0})
+    assert zero_del_res.status_code == 200
+    assert zero_del_res.get_json()["data"]["total_quantity"] == 0
 
 
 def test_checkout_transaction_order_history_and_cancel(client):
@@ -266,4 +289,3 @@ def test_checkout_rollback_and_fallback_items(client):
     client.patch(f"/api/orders/{order_data['id']}/cancel")
     prod_final = client.get(f"/api/products/{pid}").get_json()["data"]
     assert prod_final["stock"] == initial_stock
-

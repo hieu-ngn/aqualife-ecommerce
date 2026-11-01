@@ -29,6 +29,120 @@
   display: flex;
   gap: 8px;
   align-items: center;
+  justify-content: flex-end;
+}
+
+.cart-qty-input {
+  width: 68px;
+  padding: 6px 8px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 0.98rem;
+  border: 1.5px solid #93c5fd;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+.cart-qty-input:focus {
+  outline: none;
+  border-color: #0284c7;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+  background: #ffffff;
+}
+
+.water-pill {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  margin-left: 6px;
+}
+
+.water-pill--fresh {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.water-pill--salt {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.water-pill--brackish {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.bio-advisor {
+  margin: 14px 0;
+  padding: 14px 18px;
+  border-radius: 12px;
+  border-left: 5px solid #0284c7;
+  background: #f0f9ff;
+  color: #0c4a6e;
+  display: grid;
+  gap: 8px;
+}
+
+.bio-advisor--warning {
+  border-left-color: #d97706;
+  background: #fffbeb;
+  color: #78350f;
+}
+
+.bio-advisor--danger {
+  border-left-color: #dc2626;
+  background: #fef2f2;
+  color: #7f1d1d;
+}
+
+.bio-advisor h4 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.bio-advisor ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.tank-calculator__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.tank-calculator__header h3 {
+  margin: 0 0 4px 0;
+}
+
+.tank-badge {
+  background: #e0f2fe;
+  color: #0369a1;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.tank-calculator__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.tank-calculator__result {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 0.95rem;
 }
 
 .summary {
@@ -91,5 +205,9 @@
   .cart-item__thumb {
     width: 100%;
     height: 160px;
+  }
+
+  .tank-calculator__grid {
+    grid-template-columns: 1fr;
   }
 }

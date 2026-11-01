@@ -1,5 +1,5 @@
 import re
-from flask import g, request
+from flask import g, request, session
 from middleware.auth import login_required
 from services import order_service
 from services.cart_service import InsufficientStockError, ProductNotFoundError
@@ -56,6 +56,23 @@ def create_order():
                 return error("Số lượng sản phẩm phải lớn hơn 0", 422)
             sel_size = str(entry.get("selected_size") or entry.get("size") or "").strip()
             fallback_items.append({"product_id": pid, "quantity": qty, "selected_size": sel_size})
+    elif isinstance(session.get("cart"), dict) and session["cart"]:
+        fallback_items = []
+        for pid_str, entry in session["cart"].items():
+            try:
+                pid = int(pid_str)
+                qty = int(entry.get("quantity", 0)) if isinstance(entry, dict) else int(entry)
+                sel_size = (
+                    str(entry.get("selected_size") or "")
+                    if isinstance(entry, dict)
+                    else ""
+                )
+                if pid > 0 and qty > 0:
+                    fallback_items.append(
+                        {"product_id": pid, "quantity": qty, "selected_size": sel_size}
+                    )
+            except (TypeError, ValueError):
+                continue
 
     try:
         order = order_service.create_order(
@@ -72,6 +89,9 @@ def create_order():
         return error("Product not found", 404)
     except InsufficientStockError as exc:
         return error(str(exc), 400)
+
+    session["cart"] = {}
+    session.modified = True
 
     return success(order, 201)
 
