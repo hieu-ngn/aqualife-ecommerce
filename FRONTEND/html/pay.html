@@ -87,9 +87,15 @@
           <div class="field-group">
             <label>Phương thức thanh toán</label>
             <div class="payment-options">
-              <label><input type="radio" name="payment" value="cash" checked /> Tiền mặt</label>
-              <label><input type="radio" name="payment" value="transfer" /> Chuyển khoản</label>
+              <label><input type="radio" name="payment" value="cash" checked /> Tiền mặt (COD)</label>
+              <label><input type="radio" name="payment" value="transfer" /> Chuyển khoản VietQR</label>
             </div>
+          </div>
+
+          <div id="vietqr-box" class="hidden" style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:12px;margin-bottom:14px;text-align:center;">
+            <p style="margin:0 0 8px 0;font-weight:700;color:#0369a1;font-size:0.92rem;">Quét mã VietQR tự động điền số tiền</p>
+            <img id="vietqr-img" src="" alt="Mã VietQR thanh toán Aqualife" style="max-width:210px;width:100%;border-radius:8px;border:1px solid #e2e8f0;background:#fff;" />
+            <p id="vietqr-note" class="muted" style="margin:6px 0 0 0;font-size:0.84rem;"></p>
           </div>
 
           <button id="place-order" class="btn btn-primary" type="button">Đặt hàng</button>
@@ -102,7 +108,7 @@
 
   <footer class="footer footer-minimal">
     <div class="footer-container">
-        <div class="footer-bottom">© 2026 Aqualife | <a href="about.html">Điều khoản</a> | <a href="contact.html">Chính sách bảo mật</a></div>
+        <div class="footer-bottom">© 2026 Aqualife | <a href="policy.html#muc-05">Điều khoản</a> | <a href="policy.html#muc-04">Chính sách bảo mật</a></div>
     </div>
   </footer>
 </body>

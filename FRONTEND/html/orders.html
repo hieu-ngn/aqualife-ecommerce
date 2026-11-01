@@ -30,7 +30,7 @@
   <main class="page">
     <div class="container">
       <h1>Lịch sử đơn hàng của bạn</h1>
-      <p class="muted">Theo dõi trạng thái xử lý và chi tiết các đơn hàng bạn đã đặt tại Aqualife</p>
+      <p class="muted">Theo dõi trạng thái xử lý và bấm vào từng đơn hàng để xem chi tiết Order, OrderDetail (JOIN bảng sản phẩm) kèm phiếu hướng dẫn thả cá an toàn.</p>
 
       <div id="orders-feedback" class="alert hidden" style="margin: 16px 0;"></div>
       <div id="orders-empty" class="empty hidden">
@@ -39,6 +39,17 @@
       <section id="orders-list" class="cart-list" style="margin-top: 20px;"></section>
     </div>
   </main>
+
+  <!-- Modal Xem Chi Tiết Order & OrderDetail (JOIN Products) -->
+  <div id="order-detail-modal" class="modal hidden">
+    <div class="modal-content" style="max-width: 720px; width: 95%; text-align: left; max-height: 90vh; overflow-y: auto;">
+      <div id="order-detail-body"></div>
+      <div class="modal-actions" style="justify-content: flex-end; margin-top: 18px;">
+        <button id="btn-print-order" class="btn btn-ghost" type="button">🖨️ In hóa đơn &amp; Cẩm nang</button>
+        <button id="btn-close-order-modal" class="btn btn-primary" type="button">Đóng</button>
+      </div>
+    </div>
+  </div>
 
   <footer class="footer footer-lite">
     <div class="footer-container">
@@ -49,8 +60,8 @@
       </div>
       <div class="footer-col">
         <h4>Chính sách</h4>
-        <a href="contact.html">Đổi trả & vận chuyển</a>
-        <a href="about.html">Điều khoản</a>
+        <a href="policy.html">Đổi trả & vận chuyển</a>
+        <a href="policy.html#muc-05">Điều khoản</a>
       </div>
       <div class="footer-col trust-col">
         <h4>An toàn</h4>

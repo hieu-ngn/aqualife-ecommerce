@@ -1,0 +1,283 @@
+{
+  "info": {
+    "name": "Aqualife E-Commerce REST Web API (Giao dịch & CRUD)",
+    "_postman_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+    "description": "Bộ sưu tập Postman kiểm thử toàn bộ Chức năng Giao dịch (Sản phẩm, Giỏ hàng Session/DB, Đặt hàng Order & OrderDetail JOIN) và các thao tác CRUD CSDL qua Web API jsonify của hệ thống Aqualife.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:5000/api",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Sản phẩm & Danh mục (Select & Filter)",
+      "item": [
+        {
+          "name": "GET Danh sách sản phẩm (Select All)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products",
+              "host": ["{{baseUrl}}"],
+              "path": ["products"]
+            }
+          }
+        },
+        {
+          "name": "GET Lọc sản phẩm theo tiêu chí (Tìm kiếm & Sắp xếp)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products?search=Betta&min_price=50000&max_price=500000&sort=price_asc",
+              "host": ["{{baseUrl}}"],
+              "path": ["products"],
+              "query": [
+                { "key": "search", "value": "Betta" },
+                { "key": "min_price", "value": "50000" },
+                { "key": "max_price", "value": "500000" },
+                { "key": "sort", "value": "price_asc" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET Chi tiết 1 sản phẩm theo ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["products", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Giỏ hàng lưu trong Flask Session (/api/cart/session)",
+      "item": [
+        {
+          "name": "POST Thêm sản phẩm vào Giỏ hàng Session (Tăng SL nếu đã có)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_id\": 1,\n  \"quantity\": 2\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/cart/session",
+              "host": ["{{baseUrl}}"],
+              "path": ["cart", "session"]
+            }
+          }
+        },
+        {
+          "name": "GET Xem Giỏ hàng từ Session",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/cart/session",
+              "host": ["{{baseUrl}}"],
+              "path": ["cart", "session"]
+            }
+          }
+        },
+        {
+          "name": "PUT Sửa số lượng trong Giỏ hàng Session",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity\": 5\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/cart/session/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["cart", "session", "1"]
+            }
+          }
+        },
+        {
+          "name": "PUT Nhập số 0 để Xóa dòng sản phẩm khỏi Session",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity\": 0\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/cart/session/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["cart", "session", "1"]
+            }
+          }
+        },
+        {
+          "name": "DELETE Xóa 1 dòng sản phẩm khỏi Giỏ hàng Session",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/cart/session/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["cart", "session", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Xác thực & Mua hàng Tạo Đơn hàng (Order + OrderDetail)",
+      "item": [
+        {
+          "name": "POST Đăng nhập lấy phiên User hiện thời",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"customer@aqualife.vn\",\n  \"password\": \"Customer@123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "POST Thêm sản phẩm vào Giỏ hàng User",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_id\": 1,\n  \"quantity\": 2\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/cart",
+              "host": ["{{baseUrl}}"],
+              "path": ["cart"]
+            }
+          }
+        },
+        {
+          "name": "POST Tạo Đơn hàng (Sinh OrderID + các bản ghi OrderDetail)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"shipping_name\": \"Nguyễn Văn A\",\n  \"shipping_phone\": \"0912345678\",\n  \"shipping_address\": \"207 Giải Phóng, Hai Bà Trưng, Hà Nội\",\n  \"payment_method\": \"cod\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/orders",
+              "host": ["{{baseUrl}}"],
+              "path": ["orders"]
+            }
+          }
+        },
+        {
+          "name": "GET Xem danh sách Đơn hàng của User đang đăng nhập",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/orders",
+              "host": ["{{baseUrl}}"],
+              "path": ["orders"]
+            }
+          }
+        },
+        {
+          "name": "GET Xem chi tiết 1 Đơn hàng (Order + OrderDetail JOIN Products)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/orders/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["orders", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Các thao tác CRUD Cơ sở dữ liệu qua Web API (Admin)",
+      "item": [
+        {
+          "name": "POST Đăng nhập Admin",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@aqualife.vn\",\n  \"password\": \"Admin@123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "POST Thêm mới sản phẩm (CREATE)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Cá Betta Halfmoon Galaxy\",\n  \"category_id\": 1,\n  \"water_type\": \"Nước ngọt\",\n  \"price\": 180000,\n  \"stock\": 25,\n  \"description\": \"Cá Betta Halfmoon vây lớn màu Galaxy tuyệt đẹp\",\n  \"image\": \"image/ocean-bg.svg\",\n  \"status\": \"active\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/products",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "products"]
+            }
+          }
+        },
+        {
+          "name": "PUT Cập nhật bản ghi sản phẩm (UPDATE)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"price\": 195000,\n  \"stock\": 30\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/products/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "products", "1"]
+            }
+          }
+        },
+        {
+          "name": "DELETE Xóa/Ngừng kích hoạt sản phẩm (DELETE)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/products/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "products", "1"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

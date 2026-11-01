@@ -30,24 +30,51 @@
   <main class="page">
     <div class="container">
       <h1>Giỏ hàng của bạn</h1>
-      <p class="muted">Ở đây bạn có thể điều chỉnh (Tăng/Giảm) số lượng sản phẩm</p>
+      <p class="muted">Nhập trực tiếp số lượng vào ô textbox (nhập <strong>0</strong> để xóa sản phẩm) hoặc dùng nút Tăng/Giảm. Dữ liệu giỏ hàng được đồng bộ trực tiếp vào Session.</p>
 
       <div id="cart-empty" class="empty hidden">Giỏ hàng đang trống.</div>
+
+      <!-- Cảnh báo tương thích sinh học & Tư vấn môi trường nước -->
+      <div id="bio-compatibility-box" class="bio-advisor hidden"></div>
+
       <section id="cart-items" class="cart-list"></section>
 
       <div class="summary card">
         <a href="products.html" class="quantity"><p>← Tiếp tục mua hàng</p></a>
         <div>
           <p><strong>Tổng thanh toán:</strong> <span class="price" id="cart-total">0đ</span></p>
-          <div>
-            
-          </div>
           <div class="summary-actions">
             <button id="clear-cart" class="btn btn-danger" type="button">Xóa tất cả</button>
             <button id="checkout" class="btn btn-primary" type="button">Thanh toán</button>
           </div>
         </div>
       </div>
+
+      <!-- Công cụ Tính thể tích bể & Gợi ý thiết bị thủy sinh -->
+      <section class="tank-calculator card" style="margin-top: 22px;">
+        <div class="tank-calculator__header">
+          <div>
+            <h3>🐟 Công cụ tính thể tích bể &amp; Mật độ thả cá chuẩn sinh học</h3>
+            <p class="muted">Nhập kích thước bể của bạn (cm) để kiểm tra xem bể có đủ sức chứa cho giỏ hàng hiện tại không.</p>
+          </div>
+          <span class="tank-badge" id="tank-recommended-badge">Khuyến nghị cho giỏ hàng: 0 Lít</span>
+        </div>
+        <div class="tank-calculator__grid">
+          <div class="field-group">
+            <label for="tank-length">Chiều dài (cm)</label>
+            <input id="tank-length" type="number" min="10" max="500" value="60" class="input" />
+          </div>
+          <div class="field-group">
+            <label for="tank-width">Chiều rộng (cm)</label>
+            <input id="tank-width" type="number" min="10" max="300" value="30" class="input" />
+          </div>
+          <div class="field-group">
+            <label for="tank-height">Chiều cao (cm)</label>
+            <input id="tank-height" type="number" min="10" max="300" value="36" class="input" />
+          </div>
+        </div>
+        <div id="tank-calc-result" class="tank-calculator__result"></div>
+      </section>
     </div>
   </main>
 
@@ -71,8 +98,8 @@
       </div>
       <div class="footer-col">
         <h4>Chính sách</h4>
-        <a href="contact.html">Đổi trả & vận chuyển</a>
-        <a href="about.html">Điều khoản</a>
+        <a href="policy.html">Đổi trả & vận chuyển</a>
+        <a href="policy.html#muc-05">Điều khoản</a>
       </div>
       <div class="footer-col trust-col">
         <h4>An toàn</h4>

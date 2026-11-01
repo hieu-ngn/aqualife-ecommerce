@@ -6,7 +6,7 @@
 --
 -- TEST CREDENTIALS (development only - do not use in production):
 --   Admin:    admin@aqualife.com    / Admin@123
---   Customer: khach1@aqualife.com   / Customer@123
+--   Customer: khach1@aqualife.com   / Customer@123 
 --   Customer: khach2@aqualife.com   / Customer@123
 --   Customer: khach3@aqualife.com   / Customer@123
 -- ============================================================

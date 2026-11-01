@@ -1,0 +1,755 @@
+/* ===================== TOP STRIP / SUBHEADER ===================== */
+.policy-top-strip {
+  height: 54px;
+  background: linear-gradient(90deg, #e2ecf5 0%, #f1f6fb 55%, #f8fbfe 100%);
+  border-bottom: 1px solid #e1ebf3;
+}
+
+.policy-page {
+  padding: 36px 0 72px;
+  background: #f5f8fc;
+  min-height: calc(100vh - 140px);
+}
+
+/* ===================== MAIN 2-COLUMN LAYOUT ===================== */
+.policy-layout {
+  display: grid;
+  grid-template-columns: 310px minmax(0, 1fr);
+  gap: 32px;
+  align-items: start;
+}
+
+/* ===================== LEFT SIDEBAR ===================== */
+.policy-sidebar {
+  position: sticky;
+  top: 90px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+/* TOC Card */
+.policy-toc-card {
+  background: #ffffff;
+  border: 1px solid #e4edf5;
+  border-radius: 16px;
+  padding: 22px 18px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.035);
+}
+
+.toc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px 14px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #f0f5fa;
+}
+
+.toc-title {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: #7b8a9b;
+}
+
+.toc-version {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--primary);
+  background: #edf6fd;
+  padding: 3px 9px;
+  border-radius: 999px;
+}
+
+.toc-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.toc-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  transition: all 0.2s ease;
+}
+
+.toc-link i {
+  width: 20px;
+  text-align: center;
+  font-size: 15px;
+  color: #5e6b7a;
+  transition: color 0.2s ease;
+}
+
+.toc-link:hover {
+  background: #f3f8fc;
+  color: var(--primary-dark);
+}
+
+.toc-link:hover i {
+  color: var(--primary);
+}
+
+.toc-link.active {
+  background: #ebf3f9;
+  color: var(--primary);
+  font-weight: 700;
+  box-shadow: inset 3px 0 0 var(--primary);
+}
+
+.toc-link.active i {
+  color: var(--primary);
+}
+
+/* Emergency Help Card */
+.policy-help-card {
+  background: #eef3f8;
+  border: 1px solid #dce7f1;
+  border-radius: 16px;
+  padding: 22px 18px;
+  box-shadow: 0 8px 24px rgba(11, 106, 162, 0.05);
+}
+
+.help-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.help-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 19px;
+  flex-shrink: 0;
+  box-shadow: 0 6px 14px rgba(11, 106, 162, 0.25);
+}
+
+.help-card-header h3 {
+  margin: 0 0 3px;
+  font-size: 15.5px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.help-card-header p {
+  margin: 0;
+  font-size: 12.5px;
+  color: #64748b;
+}
+
+.help-info-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.help-info-item {
+  background: #ffffff;
+  border: 1px solid #e2ecf4;
+  border-radius: 10px;
+  padding: 11px 13px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.help-info-item--stack {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+}
+
+.help-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.help-label i {
+  color: var(--primary);
+  font-size: 13px;
+}
+
+.help-value {
+  font-weight: 800;
+  color: #1e293b;
+}
+
+.help-value--primary {
+  color: var(--primary);
+  font-size: 14px;
+}
+
+.help-hours-text {
+  margin: 0;
+  padding-left: 21px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #64748b;
+}
+
+.btn-claim-call {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 13px 16px;
+  border-radius: 10px;
+  background: #005b8f;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  border: none;
+  box-shadow: 0 6px 16px rgba(0, 91, 143, 0.24);
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.btn-claim-call:hover {
+  background: #004872;
+  transform: translateY(-1px);
+}
+
+/* ===================== RIGHT CONTENT SECTIONS ===================== */
+.policy-content {
+  display: flex;
+  flex-direction: column;
+  gap: 44px;
+}
+
+.policy-section {
+  scroll-margin-top: 96px;
+}
+
+.section-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.section-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 12px;
+  border-radius: 6px;
+  background: #a5d8ff;
+  color: #004872;
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.section-line {
+  flex: 1;
+  height: 1px;
+  background: #dde7f0;
+}
+
+.policy-section-title {
+  margin: 0 0 12px;
+  font-size: clamp(24px, 3vw, 31px);
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.25;
+}
+
+.policy-section-lead {
+  margin: 0 0 24px;
+  font-size: 15.5px;
+  line-height: 1.65;
+  color: #475569;
+}
+
+/* ===================== MỤC 01: DOA SHOWCASE BANNER ===================== */
+.doa-showcase-banner {
+  position: relative;
+  border-radius: 18px;
+  overflow: hidden;
+  background: #071927;
+  display: grid;
+  grid-template-columns: 1.45fr 0.55fr;
+  min-height: 320px;
+  margin-bottom: 22px;
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.12);
+  border: 1px solid #d7e4ef;
+}
+
+.doa-banner-visual {
+  position: relative;
+  min-height: 320px;
+  overflow: hidden;
+}
+
+.doa-banner-visual img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  transform: scale(1.02);
+  transition: transform 0.6s ease;
+}
+
+.doa-showcase-banner:hover .doa-banner-visual img {
+  transform: scale(1.06);
+}
+
+.doa-banner-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(6, 22, 36, 0.08) 0%,
+    rgba(6, 22, 36, 0.45) 55%,
+    rgba(4, 15, 26, 0.92) 100%
+  );
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 26px 28px;
+  color: #ffffff;
+}
+
+.doa-banner-tag {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: #93c5fd;
+  margin-bottom: 6px;
+}
+
+.doa-banner-overlay h3 {
+  margin: 0;
+  font-size: 18.5px;
+  line-height: 1.45;
+  font-weight: 700;
+  color: #ffffff;
+  max-width: 540px;
+}
+
+.doa-banner-doc {
+  background: linear-gradient(180deg, #ffffff 0%, #e5ebf1 72%, #7d8995 100%);
+  padding: 20px 18px;
+  border-left: 1px solid rgba(255, 255, 255, 0.25);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  color: #1e293b;
+}
+
+.doa-doc-sheet {
+  font-size: 11px;
+  line-height: 1.45;
+  color: #334155;
+}
+
+.doa-doc-sheet h4 {
+  margin: 0 0 8px;
+  font-size: 12.5px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.doa-doc-sheet p {
+  margin: 0 0 8px;
+  font-size: 10.5px;
+  color: #475569;
+}
+
+.doa-doc-sheet .doc-heading {
+  font-weight: 800;
+  color: #0f172a;
+  margin: 10px 0 6px;
+  font-size: 11.5px;
+}
+
+.doa-doc-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-weight: 600;
+  font-size: 11px;
+  color: #1e293b;
+}
+
+/* 3 DOA Feature Cards */
+.doa-standards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  margin-bottom: 20px;
+}
+
+.doa-standard-card {
+  background: #ffffff;
+  border: 1px solid #e4edf5;
+  border-radius: 14px;
+  padding: 22px 20px;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.03);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.doa-standard-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 26px rgba(11, 106, 162, 0.08);
+}
+
+.standard-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: #ebf5ff;
+  color: var(--primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  margin-bottom: 16px;
+}
+
+.doa-standard-card h3 {
+  margin: 0 0 10px;
+  font-size: 15.5px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.doa-standard-card p {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: #64748b;
+}
+
+/* DOA Claim Steps Box */
+.policy-box {
+  background: #ffffff;
+  border: 1px solid #e4edf5;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.03);
+}
+
+.policy-box--highlight {
+  background: linear-gradient(135deg, #f0f7ff 0%, #ffffff 100%);
+  border-color: #c5ddf5;
+}
+
+.policy-box-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.policy-box-header i {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: var(--primary);
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+.policy-box-header h3 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.doa-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 14px;
+}
+
+.doa-step-item {
+  background: #ffffff;
+  border: 1px solid #dde8f3;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.step-num {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--primary);
+  background: #e0f2fe;
+  padding: 3px 9px;
+  border-radius: 999px;
+  margin-bottom: 8px;
+}
+
+.doa-step-item h4 {
+  margin: 0 0 6px;
+  font-size: 14.5px;
+  color: #0f172a;
+}
+
+.doa-step-item p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: #64748b;
+}
+
+/* ===================== MỤC 02: SHIPPING TABLE & CARDS ===================== */
+.shipping-table-wrap {
+  background: #ffffff;
+  border: 1px solid #e4edf5;
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 18px;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.03);
+}
+
+.shipping-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.shipping-table th {
+  background: #f1f6fb;
+  color: #1e293b;
+  font-weight: 800;
+  text-align: left;
+  padding: 14px 18px;
+  border-bottom: 1px solid #dde7f0;
+}
+
+.shipping-table td {
+  padding: 14px 18px;
+  border-bottom: 1px solid #eef3f8;
+  color: #475569;
+  line-height: 1.5;
+}
+
+.shipping-table tr:last-child td {
+  border-bottom: none;
+}
+
+.shipping-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.shipping-badge--fast {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.shipping-badge--air {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.shipping-badge--road {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+/* ===================== MỤC 03, 04, 05 CARDS & LISTS ===================== */
+.policy-two-col {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.policy-check-list {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.policy-check-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: #475569;
+}
+
+.policy-check-list li i {
+  margin-top: 3px;
+  color: var(--primary);
+}
+
+.policy-check-list--warn li i {
+  color: #d97706;
+}
+
+.terms-accordion {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.term-item {
+  background: #ffffff;
+  border: 1px solid #e4edf5;
+  border-radius: 12px;
+  padding: 18px 20px;
+}
+
+.term-item h3 {
+  margin: 0 0 8px;
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.term-item h3 i {
+  color: var(--primary);
+}
+
+.term-item p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #475569;
+}
+
+/* ===================== FLOATING CHAT / CLAIM BUTTON & MODAL ===================== */
+.floating-support-btn {
+  position: fixed;
+  right: 28px;
+  bottom: 28px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #005b8f;
+  color: #ffffff;
+  border: none;
+  box-shadow: 0 10px 26px rgba(0, 91, 143, 0.35);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  z-index: 200;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.floating-support-btn:hover {
+  background: #004872;
+  transform: scale(1.07);
+}
+
+.claim-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(4px);
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.claim-modal {
+  background: #ffffff;
+  border-radius: 18px;
+  max-width: 520px;
+  width: 100%;
+  padding: 26px;
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25);
+  border: 1px solid #d7e4ef;
+}
+
+.claim-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.claim-modal-head h3 {
+  margin: 0;
+  font-size: 19px;
+  color: #0f172a;
+}
+
+.claim-modal-close {
+  background: #f1f5f9;
+  border: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  font-size: 16px;
+  color: #475569;
+}
+
+.claim-modal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+/* ===================== RESPONSIVE ===================== */
+@media (max-width: 980px) {
+  .policy-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .policy-sidebar {
+    position: static;
+  }
+
+  .doa-showcase-banner {
+    grid-template-columns: 1fr;
+  }
+
+  .doa-banner-doc {
+    display: none;
+  }
+
+  .doa-standards-grid,
+  .doa-steps,
+  .policy-two-col {
+    grid-template-columns: 1fr;
+  }
+}

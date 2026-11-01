@@ -321,8 +321,9 @@ function addToCart(productId, quantity = 1, selectedSize = null) {
   );
 
   const numericId = Number(canonicalId);
-  if (localStorage.getItem("aqualife_user") && Number.isInteger(numericId) && numericId > 0) {
-    apiFetch("/cart", {
+  if (Number.isInteger(numericId) && numericId > 0) {
+    const endpoint = localStorage.getItem("aqualife_user") ? "/cart" : "/cart/session";
+    apiFetch(endpoint, {
       method: "POST",
       body: JSON.stringify({
         product_id: numericId,
@@ -335,17 +336,34 @@ function addToCart(productId, quantity = 1, selectedSize = null) {
 }
 
 function updateCartItemQty(productId, newQuantity) {
-  const qty = Number(newQuantity || 0);
+  const qty = Number(newQuantity);
+  if (Number.isNaN(qty) || qty < 0) {
+    showToast("S? l??ng nh?p v?o kh?ng h?p l?.", "error");
+    return false;
+  }
+
   const product = productsCache ? findProductById(productsCache, productId) : null;
   const canonicalId = product ? String(product.id) : String(productId);
   const cart = getCart();
+  const numericId = Number(canonicalId);
+  const isLoggedIn = Boolean(localStorage.getItem("aqualife_user"));
 
+  // Ng??i d?ng nh?p s? 0 ???c hi?u l? x?a d?ng s?n ph?m ?? kh?i gi? h?ng
   if (qty <= 0) {
     delete cart[canonicalId];
     saveCart(cart);
-    const numericId = Number(canonicalId);
-    if (localStorage.getItem("aqualife_user") && Number.isInteger(numericId)) {
-      apiFetch(`/cart/${numericId}`, { method: "DELETE" }).catch(() => {});
+    showToast(
+      product
+        ? `?? x?a "${product.name}" kh?i gi? h?ng (nh?p s? l??ng = 0).`
+        : "?? x?a s?n ph?m kh?i gi? h?ng.",
+      "success"
+    );
+    if (Number.isInteger(numericId) && numericId > 0) {
+      const endpoint = isLoggedIn ? `/cart/${numericId}` : `/cart/session/${numericId}`;
+      apiFetch(endpoint, {
+        method: "PUT",
+        body: JSON.stringify({ quantity: 0 }),
+      }).catch(() => {});
     }
     return true;
   }
@@ -354,7 +372,7 @@ function updateCartItemQty(productId, newQuantity) {
   const curStock = getSizeStock(product, curSize);
   if (product && curStock !== null && qty > curStock) {
     showToast(
-      `Sản phẩm "${product.name}"${curSize ? ` (${curSize})` : ""} chỉ còn tối đa ${curStock} sản phẩm trong kho.`,
+      `S?n ph?m "${product.name}"${curSize ? ` (${curSize})` : ""} ch? c?n t?i ?a ${curStock} s?n ph?m trong kho.`,
       "error"
     );
     return false;
@@ -363,9 +381,9 @@ function updateCartItemQty(productId, newQuantity) {
   cart[canonicalId] = qty;
   saveCart(cart);
 
-  const numericId = Number(canonicalId);
-  if (localStorage.getItem("aqualife_user") && Number.isInteger(numericId)) {
-    apiFetch(`/cart/${numericId}`, {
+  if (Number.isInteger(numericId) && numericId > 0) {
+    const endpoint = isLoggedIn ? `/cart/${numericId}` : `/cart/session/${numericId}`;
+    apiFetch(endpoint, {
       method: "PUT",
       body: JSON.stringify({ quantity: qty }),
     }).catch(() => {});
@@ -381,20 +399,22 @@ function removeFromCart(productId) {
   saveCart(cart);
 
   const numericId = Number(canonicalId);
-  if (localStorage.getItem("aqualife_user") && Number.isInteger(numericId)) {
-    apiFetch(`/cart/${numericId}`, { method: "DELETE" }).catch(() => {});
+  if (Number.isInteger(numericId) && numericId > 0) {
+    const endpoint = localStorage.getItem("aqualife_user")
+      ? `/cart/${numericId}`
+      : `/cart/session/${numericId}`;
+    apiFetch(endpoint, { method: "DELETE" }).catch(() => {});
   }
 }
 
 async function clearCart() {
   saveCart({});
   saveCartSizes({});
-  if (localStorage.getItem("aqualife_user")) {
-    try {
-      await apiFetch("/cart", { method: "DELETE" });
-    } catch {
-      // ignore offline
-    }
+  const endpoint = localStorage.getItem("aqualife_user") ? "/cart" : "/cart/session";
+  try {
+    await apiFetch(endpoint, { method: "DELETE" });
+  } catch {
+    // ignore offline
   }
 }
 
