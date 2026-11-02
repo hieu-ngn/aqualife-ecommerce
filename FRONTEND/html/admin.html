@@ -42,9 +42,12 @@
             <i class="fa-solid fa-box-archive"></i>
             <span>Quản lý sản phẩm</span>
           </button>
-          <button type="button" class="adm-nav-btn" data-tab="orders">
+          <button type="button" class="adm-nav-btn" data-tab="orders" style="position:relative;">
             <i class="fa-solid fa-receipt"></i>
             <span>Đơn hàng</span>
+            <span id="nav-orders-notif-dot" class="adm-nav-notif-dot" title="Có yêu cầu hỗ trợ khách hàng chờ xử lý">
+              <span id="nav-orders-notif-count">1</span>
+            </span>
           </button>
           <button type="button" class="adm-nav-btn" data-tab="users">
             <i class="fa-solid fa-user-group"></i>
@@ -430,6 +433,17 @@
           <div class="adm-page-header">
             <div class="adm-title-group">
               <h1>Điều phối & Quản lý Đơn hàng</h1>
+              <span class="adm-updated-note">Quản lý đơn đặt hàng sinh vật & tiếp nhận phiếu yêu cầu tư vấn / hỗ trợ từ khách hàng</span>
+            </div>
+            <div class="adm-header-actions">
+              <button type="button" id="btn-jump-support-table" class="btn-adm-outline adm-support-jump-btn">
+                <i class="fa-solid fa-headset" style="color:#0284c7;"></i>
+                <span>Yêu cầu hỗ trợ khách hàng</span>
+                <span id="header-support-red-dot" class="adm-support-red-pill">
+                  <span class="adm-pulse-dot"></span>
+                  <span id="header-support-count">1</span> mới
+                </span>
+              </button>
             </div>
           </div>
 
@@ -468,6 +482,69 @@
                 </thead>
                 <tbody id="admin-orders-tbody"></tbody>
               </table>
+            </div>
+          </div>
+
+          <!-- BẢNG YÊU CẦU TƯ VẤN & HỖ TRỢ KHÁCH HÀNG (ĐỒNG BỘ TỪ CONTACT.HTML) -->
+          <div id="support-requests-section" style="margin-top:28px;">
+            <div class="adm-support-section-head">
+              <div class="adm-support-title-wrap">
+                <h2>
+                  <i class="fa-solid fa-headset" style="color:#0284c7;"></i>
+                  Bảng Yêu cầu Tư vấn & Hỗ trợ Khách hàng
+                </h2>
+                <span id="support-pending-badge" class="adm-support-red-badge">
+                  <span class="adm-pulse-dot"></span>
+                  <span id="support-pending-count">1</span> yêu cầu mới chờ phản hồi
+                </span>
+              </div>
+              <div class="adm-support-head-actions">
+                <a href="contact.html" target="_blank" class="btn-adm-outline">
+                  <i class="fa-solid fa-arrow-up-right-from-square"></i> Mở Form Gửi Yêu cầu (contact.html)
+                </a>
+              </div>
+            </div>
+
+            <div class="adm-filter-box" style="margin-top:12px;">
+              <div style="display:flex;gap:12px;flex-wrap:wrap;">
+                <div class="adm-search-input-wrap" style="flex:1;min-width:240px;">
+                  <i class="fa-solid fa-magnifying-glass"></i>
+                  <input id="admin-support-search" class="adm-input" type="search" placeholder="Tìm theo mã phiếu (#AQ-...), tên khách, SĐT, mã đơn, chủ đề, nội dung..." />
+                </div>
+                <select id="admin-support-status" class="adm-select" style="width:230px;">
+                  <option value="">Tất cả trạng thái hỗ trợ</option>
+                  <option value="pending">🔴 Chờ phản hồi (Mới)</option>
+                  <option value="resolved">🟢 Đã phản hồi / Hoàn tất</option>
+                </select>
+                <button type="button" id="admin-support-filter-btn" class="btn-adm-primary">Lọc yêu cầu</button>
+                <button type="button" id="admin-support-refresh-btn" class="btn-adm-outline" title="Làm mới danh sách">
+                  <i class="fa-solid fa-rotate"></i> Làm mới
+                </button>
+              </div>
+            </div>
+
+            <div class="adm-table-card">
+              <div class="adm-table-scroll">
+                <table class="creature-table">
+                  <thead>
+                    <tr>
+                      <th>MÃ PHIẾU & THỜI GIAN</th>
+                      <th>KHÁCH HÀNG LIÊN HỆ</th>
+                      <th>MÃ ĐƠN LIÊN QUAN</th>
+                      <th>CHỦ ĐỀ & NỘI DUNG CHI TIẾT</th>
+                      <th>TRẠNG THÁI</th>
+                      <th>XỬ LÝ YÊU CẦU</th>
+                    </tr>
+                  </thead>
+                  <tbody id="admin-support-tbody">
+                    <tr>
+                      <td colspan="6" class="muted" style="text-align:center;padding:24px;">
+                        Đang tải danh sách yêu cầu hỗ trợ...
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </section>

@@ -34,3 +34,7 @@ admin_bp.patch("/users/<int:user_id>/role")(admin_controller.update_user_role)
 admin_bp.get("/settings")(admin_controller.get_settings)
 admin_bp.put("/settings")(admin_controller.update_settings)
 
+# Customer Support & Consultation Tickets (Yêu cầu hỗ trợ)
+admin_bp.get("/contacts")(admin_controller.list_support_tickets)
+admin_bp.patch("/contacts/<int:ticket_id>")(admin_controller.update_support_ticket)
+admin_bp.delete("/contacts/<int:ticket_id>")(admin_controller.delete_support_ticket)

@@ -156,6 +156,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       await loadOverview();
     } else if (tabName === "orders") {
       await loadAdminOrders();
+      await loadAdminSupportTickets();
     } else if (tabName === "users") {
       await loadAdminUsers();
     } else if (tabName === "inventory") {
@@ -190,17 +191,35 @@ document.addEventListener("DOMContentLoaded", async () => {
     openProductModal(null);
   });
 
+  // Nút Chuông thông báo trên Topbar -> chuyển ngay tới bảng Yêu cầu hỗ trợ trong mục Đơn hàng
+  document.getElementById("topbar-notif-btn")?.addEventListener("click", async () => {
+    await switchTab("orders");
+    const sec = document.getElementById("support-requests-section");
+    sec?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+
   // 3. Khởi tạo các sự kiện
   bindCatalogEvents();
   bindOrderEvents();
   bindUserEvents();
   bindSettingsEvents();
 
-  // Tải dữ liệu mặc định (Quản lý sản phẩm + Tổng quan ngầm + Cài đặt liên hệ Admin)
+  // Lắng nghe sự kiện gửi phiếu hỗ trợ realtime từ tab contact.html cùng trình duyệt
+  window.addEventListener("storage", (e) => {
+    if (e.key === "aqualife_contact_history_v1") {
+      loadAdminSupportTickets();
+      if (window.Aqualife && window.Aqualife.showToast) {
+        window.Aqualife.showToast("🔔 Có yêu cầu hỗ trợ mới từ khách hàng vừa gửi!", "success");
+      }
+    }
+  });
+
+  // Tải dữ liệu mặc định (Quản lý sản phẩm + Tổng quan ngầm + Cài đặt liên hệ Admin + Chấm đỏ Hỗ trợ)
   await loadAdminCategories();
   await loadAdminProducts();
   loadOverview();
   loadAdminStoreSettings();
+  loadAdminSupportTickets();
 });
 
 // ==========================================================================
@@ -1241,10 +1260,253 @@ async function loadAdminOrders() {
   }
 }
 
+function updateSupportRedDotBadges(pendingCount) {
+  const count = Math.max(0, Number(pendingCount || 0));
+  const navDot = document.getElementById("nav-orders-notif-dot");
+  const navCount = document.getElementById("nav-orders-notif-count");
+  const topDot = document.getElementById("topbar-notif-dot");
+  const topBtn = document.getElementById("topbar-notif-btn");
+  const headerDot = document.getElementById("header-support-red-dot");
+  const headerCount = document.getElementById("header-support-count");
+  const secBadge = document.getElementById("support-pending-badge");
+  const secCount = document.getElementById("support-pending-count");
+
+  if (navCount) navCount.textContent = String(count);
+  if (headerCount) headerCount.textContent = String(count);
+  if (secCount) secCount.textContent = String(count);
+
+  if (count > 0) {
+    navDot?.classList.remove("hidden");
+    topDot?.classList.remove("hidden");
+    topDot?.classList.add("is-active");
+    if (topBtn) topBtn.title = `Có ${count} yêu cầu hỗ trợ khách hàng chờ phản hồi`;
+    headerDot?.classList.remove("hidden");
+    secBadge?.classList.remove("hidden");
+  } else {
+    navDot?.classList.add("hidden");
+    topDot?.classList.add("hidden");
+    topDot?.classList.remove("is-active");
+    if (topBtn) topBtn.title = "Không có yêu cầu hỗ trợ mới";
+    headerDot?.classList.add("hidden");
+    secBadge?.classList.add("hidden");
+  }
+}
+
+async function syncLocalContactsToBackend() {
+  try {
+    const raw = localStorage.getItem("aqualife_contact_history_v1");
+    const list = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(list) || !list.length) return;
+    let changed = false;
+    for (const item of list) {
+      if (item && item.ticketId && !item.syncedToDb) {
+        try {
+          await window.Aqualife.apiFetch("/contacts", {
+            method: "POST",
+            body: JSON.stringify({
+              ticket_code: item.ticketId,
+              name: item.name || "Khách hàng",
+              phone: item.phone || "",
+              email: item.email || "",
+              order_code: item.orderCode || "",
+              subject: item.subject || "Tư vấn chung",
+              message: item.message || "",
+            }),
+          });
+          item.syncedToDb = true;
+          changed = true;
+        } catch {
+          // ignore
+        }
+      }
+    }
+    if (changed) {
+      localStorage.setItem("aqualife_contact_history_v1", JSON.stringify(list));
+    }
+  } catch {
+    // ignore
+  }
+}
+
+async function loadAdminSupportTickets() {
+  const tbody = document.getElementById("admin-support-tbody");
+  const search = document.getElementById("admin-support-search")?.value.trim() || "";
+  const status = document.getElementById("admin-support-status")?.value || "";
+
+  await syncLocalContactsToBackend();
+
+  const params = new URLSearchParams();
+  if (search) params.set("search", search);
+  if (status) params.set("status", status);
+
+  try {
+    const data = await window.Aqualife.apiFetch(`/admin/contacts?${params.toString()}`);
+    const items = Array.isArray(data?.items) ? data.items : [];
+    const pendingCount = Number(data?.pending_count ?? items.filter((t) => t.status === "pending").length);
+
+    updateSupportRedDotBadges(pendingCount);
+
+    if (!tbody) return;
+    if (!items.length) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="6" class="muted" style="text-align:center;padding:24px;">
+            Chưa có phiếu yêu cầu tư vấn / hỗ trợ nào khớp bộ lọc.
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = items
+      .map((t) => {
+        const isPending = t.status === "pending";
+        const timeStr = t.created_at
+          ? new Date(t.created_at).toLocaleString("vi-VN")
+          : "Vừa xong";
+        const rawOrderCode = String(t.order_code || "").trim();
+        const cleanOrderId = rawOrderCode.replace(/[^0-9]/g, "");
+
+        const orderCellHtml = rawOrderCode
+          ? `<button type="button" class="support-order-link-btn" data-order-code="${esc(cleanOrderId || rawOrderCode)}" title="Bấm để lọc đơn hàng này ở bảng trên">
+               <i class="fa-solid fa-receipt"></i> ${esc(rawOrderCode.startsWith("#") ? rawOrderCode : "#" + rawOrderCode)}
+             </button>`
+          : `<span class="muted" style="font-size:12px;">Tư vấn chung</span>`;
+
+        const statusBadgeHtml = isPending
+          ? `<span class="eco-status-badge st-out" style="display:inline-flex;align-items:center;gap:6px;">
+               <span class="adm-pulse-dot"></span> Chờ phản hồi
+             </span>`
+          : `<span class="eco-status-badge st-selling">
+               <i class="fa-solid fa-check"></i> Đã phản hồi
+             </span>`;
+
+        const actionHtml = isPending
+          ? `<div class="row-actions" style="margin-top:0;">
+               <button type="button" class="btn-row-icon btn-support-status" data-id="${t.id}" data-next="resolved" style="background:#dcfce7;color:#15803d;border-color:#86efac;font-weight:700;">
+                 <i class="fa-solid fa-check"></i> Đánh dấu Đã phản hồi
+               </button>
+               <button type="button" class="btn-row-icon btn-support-delete" data-id="${t.id}" title="Xóa phiếu này">
+                 <i class="fa-regular fa-trash-can"></i>
+               </button>
+             </div>`
+          : `<div class="row-actions" style="margin-top:0;">
+               <button type="button" class="btn-row-icon btn-support-status" data-id="${t.id}" data-next="pending">
+                 Mở lại
+               </button>
+               <button type="button" class="btn-row-icon btn-support-delete" data-id="${t.id}" title="Xóa phiếu này">
+                 <i class="fa-regular fa-trash-can"></i>
+               </button>
+             </div>`;
+
+        return `
+          <tr class="${isPending ? "support-row-unread" : ""}">
+            <td>
+              <div>
+                <strong>#${esc(t.ticket_code)}</strong>
+                ${isPending ? `<span class="support-new-dot-pill">● MỚI</span>` : ""}
+              </div>
+              <div class="muted" style="font-size:11.5px;margin-top:3px;">${esc(timeStr)}</div>
+            </td>
+            <td>
+              <div><strong>${esc(t.name)}</strong></div>
+              <div style="font-size:12.5px;margin-top:2px;">
+                <a href="tel:${esc(String(t.phone).replace(/\s+/g, ""))}" style="color:#0284c7;text-decoration:none;font-weight:600;">
+                  <i class="fa-solid fa-phone" style="font-size:11px;"></i> ${esc(t.phone)}
+                </a>
+              </div>
+              <div class="muted" style="font-size:12px;">${esc(t.email)}</div>
+            </td>
+            <td>${orderCellHtml}</td>
+            <td style="max-width:380px;">
+              <div class="support-subject-tag">${esc(t.subject)}</div>
+              <div style="font-size:13px;color:#1e293b;line-height:1.45;white-space:pre-wrap;">${esc(t.message)}</div>
+            </td>
+            <td>${statusBadgeHtml}</td>
+            <td>${actionHtml}</td>
+          </tr>
+        `;
+      })
+      .join("");
+  } catch (err) {
+    if (tbody) {
+      tbody.innerHTML = `<tr><td colspan="6" class="muted">Không thể tải danh sách yêu cầu hỗ trợ.</td></tr>`;
+    }
+  }
+}
+
 function bindOrderEvents() {
   document.getElementById("admin-order-filter-btn")?.addEventListener("click", loadAdminOrders);
   document.getElementById("admin-order-search")?.addEventListener("keydown", (e) => {
     if (e.key === "Enter") loadAdminOrders();
+  });
+
+  // Sự kiện nút nhảy nhanh xuống bảng Yêu cầu hỗ trợ
+  document.getElementById("btn-jump-support-table")?.addEventListener("click", () => {
+    document.getElementById("support-requests-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+
+  // Bộ lọc bảng Yêu cầu hỗ trợ
+  document.getElementById("admin-support-filter-btn")?.addEventListener("click", loadAdminSupportTickets);
+  document.getElementById("admin-support-refresh-btn")?.addEventListener("click", loadAdminSupportTickets);
+  document.getElementById("admin-support-status")?.addEventListener("change", loadAdminSupportTickets);
+  document.getElementById("admin-support-search")?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") loadAdminSupportTickets();
+  });
+
+  // Thao tác trên bảng Yêu cầu hỗ trợ
+  document.getElementById("admin-support-tbody")?.addEventListener("click", async (e) => {
+    const orderLinkBtn = e.target.closest(".support-order-link-btn");
+    if (orderLinkBtn) {
+      const code = orderLinkBtn.dataset.orderCode || "";
+      const orderSearchInput = document.getElementById("admin-order-search");
+      if (orderSearchInput) {
+        orderSearchInput.value = code;
+        await loadAdminOrders();
+        orderSearchInput.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+      return;
+    }
+
+    const statusBtn = e.target.closest(".btn-support-status");
+    if (statusBtn) {
+      const ticketId = Number(statusBtn.dataset.id);
+      const nextStatus = statusBtn.dataset.next || "resolved";
+      statusBtn.disabled = true;
+      try {
+        await window.Aqualife.apiFetch(`/admin/contacts/${ticketId}`, {
+          method: "PATCH",
+          body: JSON.stringify({ status: nextStatus }),
+        });
+        window.Aqualife.showToast(
+          nextStatus === "resolved"
+            ? "Đã đánh dấu phản hồi yêu cầu hỗ trợ!"
+            : "Đã chuyển yêu cầu về trạng thái Chờ phản hồi!",
+          "success"
+        );
+        await loadAdminSupportTickets();
+      } catch (err) {
+        window.Aqualife.showToast(err.message, "error");
+        statusBtn.disabled = false;
+      }
+      return;
+    }
+
+    const delBtn = e.target.closest(".btn-support-delete");
+    if (delBtn) {
+      const ticketId = Number(delBtn.dataset.id);
+      delBtn.disabled = true;
+      try {
+        await window.Aqualife.apiFetch(`/admin/contacts/${ticketId}`, {
+          method: "DELETE",
+        });
+        window.Aqualife.showToast("Đã xóa phiếu yêu cầu hỗ trợ!", "success");
+        await loadAdminSupportTickets();
+      } catch (err) {
+        window.Aqualife.showToast(err.message, "error");
+        delBtn.disabled = false;
+      }
+    }
   });
 
   document.getElementById("admin-orders-tbody")?.addEventListener("click", async (e) => {

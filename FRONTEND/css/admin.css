@@ -1157,3 +1157,167 @@ body.admin-body {
     height: auto;
   }
 }
+
+
+/* ==========================================================================
+   SUPPORT REQUESTS TABLE & RED DOT NOTIFICATIONS (ORDERS PANEL)
+   ========================================================================== */
+@keyframes admPulseRed {
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.75);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
+}
+
+.adm-nav-notif-dot {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #ef4444;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.55);
+  animation: admPulseRed 1.8s infinite;
+}
+
+.adm-nav-notif-dot.hidden,
+.adm-support-red-pill.hidden,
+.adm-support-red-badge.hidden,
+.adm-notif-dot.hidden {
+  display: none !important;
+}
+
+.adm-notif-dot.is-active {
+  width: 9px;
+  height: 9px;
+  background: #ef4444;
+  animation: admPulseRed 1.8s infinite;
+}
+
+.adm-support-jump-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.adm-support-red-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #fee2e2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 800;
+}
+
+.adm-pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ef4444;
+  display: inline-block;
+  animation: admPulseRed 1.6s infinite;
+}
+
+.adm-support-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.adm-support-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.adm-support-title-wrap h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+  color: #0f172a;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.adm-support-red-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  color: #dc2626;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.support-row-unread {
+  background: #fffafa;
+}
+
+.support-new-dot-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #ef4444;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  margin-left: 6px;
+  animation: admPulseRed 1.8s infinite;
+}
+
+.support-order-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 7px;
+  background: #e0f2fe;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.support-order-link-btn:hover {
+  background: #0284c7;
+  color: #ffffff;
+}
+
+.support-subject-tag {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 6px;
+  background: #f1f5f9;
+  color: #0f172a;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 5px;
+}

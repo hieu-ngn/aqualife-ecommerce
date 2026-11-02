@@ -482,3 +482,61 @@ def update_settings():
     return success(updated)
 
 
+# ============================================================
+# Customer Support & Consultation Tickets (Yêu cầu hỗ trợ)
+# ============================================================
+def submit_public_contact():
+    body = request.get_json(silent=True) or {}
+    if not isinstance(body, dict):
+        return error("Dữ liệu gửi lên không hợp lệ", 400)
+
+    name = str(body.get("name") or "").strip()
+    phone = str(body.get("phone") or "").strip()
+    email = str(body.get("email") or "").strip()
+    message = str(body.get("message") or "").strip()
+
+    if not name or not phone or not email or not message:
+        return error("Vui lòng điền đầy đủ Họ tên, Số điện thoại, Email và Nội dung", 422)
+
+    ticket = dashboard_service.create_support_ticket(body)
+    return success(ticket, 201)
+
+
+@admin_required
+def list_support_tickets():
+    status = request.args.get("status")
+    search = request.args.get("search")
+    data = dashboard_service.admin_list_support_tickets(status=status, search=search)
+    return success(data)
+
+
+@admin_required
+def update_support_ticket(ticket_id: int):
+    body = request.get_json(silent=True) or {}
+    if not isinstance(body, dict):
+        return error("Dữ liệu gửi lên không hợp lệ", 400)
+
+    status = str(body.get("status") or "").strip().lower()
+    if status not in ("pending", "resolved"):
+        return error("Trạng thái yêu cầu hỗ trợ chỉ nhận 'pending' hoặc 'resolved'", 422)
+
+    admin_note = str(body["admin_note"]).strip() if "admin_note" in body and body["admin_note"] is not None else None
+
+    try:
+        updated = dashboard_service.admin_update_support_ticket(
+            ticket_id=ticket_id,
+            status=status,
+            admin_note=admin_note,
+        )
+        return success(updated)
+    except dashboard_service.SupportTicketNotFoundError:
+        return error("Không tìm thấy phiếu yêu cầu hỗ trợ", 404)
+
+
+@admin_required
+def delete_support_ticket(ticket_id: int):
+    try:
+        deleted = dashboard_service.admin_delete_support_ticket(ticket_id)
+        return success(deleted)
+    except dashboard_service.SupportTicketNotFoundError:
+        return error("Không tìm thấy phiếu yêu cầu hỗ trợ", 404)

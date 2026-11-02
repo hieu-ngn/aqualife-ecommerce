@@ -10,11 +10,14 @@ FRONTEND_DIR = Path(__file__).resolve().parent.parent / "FRONTEND"
 
 
 def _ensure_schema():
-    """Nâng cấp CSDL cũ không cần chạy tay: thêm cột size_label cho order_items."""
+    """Nâng cấp CSDL cũ không cần chạy tay: thêm cột size_label và bảng support_tickets."""
+    from services.dashboard_service import _ensure_support_tickets_table
+
     with get_db_cursor(commit=True) as cur:
         cur.execute(
             "ALTER TABLE order_items ADD COLUMN IF NOT EXISTS size_label VARCHAR(100) NOT NULL DEFAULT ''"
         )
+        _ensure_support_tickets_table(cur)
 
 
 def create_app():
@@ -81,6 +84,12 @@ def create_app():
         from controllers.admin_controller import get_public_store_info
 
         return get_public_store_info()
+
+    @app.post("/api/contacts")
+    def public_submit_contact():
+        from controllers.admin_controller import submit_public_contact
+
+        return submit_public_contact()
 
     @app.post("/api/advisor/chat")
     def advisor_chat_endpoint():

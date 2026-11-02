@@ -69,15 +69,15 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   function saveContactTicket(ticket) {
-    const list = getRecentContacts();
+    const list = getRecentContacts().filter((x) => x.ticketId !== ticket.ticketId);
     list.unshift(ticket);
-    localStorage.setItem(CONTACT_HISTORY_KEY, JSON.stringify(list.slice(0, 3)));
+    localStorage.setItem(CONTACT_HISTORY_KEY, JSON.stringify(list.slice(0, 25)));
     renderRecentContacts();
   }
 
   function renderRecentContacts() {
     if (!recentBox || !recentList) return;
-    const list = getRecentContacts();
+    const list = getRecentContacts().slice(0, 3);
     if (!list.length) {
       recentBox.classList.add("hidden");
       return;
@@ -105,9 +105,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     result.classList.remove("hidden");
   }
 
-  // 4. Xử lý gửi biểu mẫu liên hệ
+  // 4. Xử lý gửi biểu mẫu liên hệ (đồng bộ cả Backend PostgreSQL + localStorage)
   if (form && result) {
-    form.addEventListener("submit", (event) => {
+    form.addEventListener("submit", async (event) => {
       event.preventDefault();
 
       const nameEl = form.elements.namedItem("name");
@@ -158,7 +158,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       if (submitBtn) submitBtn.disabled = true;
 
-      const ticketId = `AQ-${Math.floor(1000 + Math.random() * 9000)}`;
+      let ticketId = `AQ-${Math.floor(1000 + Math.random() * 9000)}`;
       const nowStr = new Date().toLocaleString("vi-VN", {
         hour: "2-digit",
         minute: "2-digit",
@@ -166,6 +166,29 @@ document.addEventListener("DOMContentLoaded", async () => {
         month: "2-digit",
         year: "numeric",
       });
+
+      // Đồng bộ lên Backend PostgreSQL để Admin thấy ngay trong mục Đơn hàng
+      if (window.Aqualife && window.Aqualife.apiFetch) {
+        try {
+          const saved = await window.Aqualife.apiFetch("/contacts", {
+            method: "POST",
+            body: JSON.stringify({
+              ticket_code: ticketId,
+              name,
+              phone,
+              email,
+              order_code: orderCode,
+              subject,
+              message,
+            }),
+          });
+          if (saved && saved.ticket_code) {
+            ticketId = saved.ticket_code;
+          }
+        } catch {
+          // Vẫn lưu localStorage nếu offline
+        }
+      }
 
       saveContactTicket({
         ticketId,
@@ -175,12 +198,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         orderCode,
         subject,
         message,
+        status: "pending",
         createdAt: nowStr,
+        createdIso: new Date().toISOString(),
       });
 
       showMessage(
         "success",
-        `Cảm ơn ${name}! Yêu cầu "${subject}" (Mã phiếu #${ticketId}) đã được ghi nhận. Chuyên viên Aqualife sẽ phản hồi qua SĐT ${phone} hoặc email ${email} trong thời gian sớm nhất.`
+        `Cảm ơn ${name}! Yêu cầu "${subject}" (Mã phiếu #${ticketId}) đã được gửi tới bộ phận Điều phối Đơn hàng & Hỗ trợ Admin. Chuyên viên Aqualife sẽ phản hồi qua SĐT ${phone} hoặc email ${email} trong thời gian sớm nhất.`
       );
 
       if (messageEl) messageEl.value = "";
@@ -290,4 +315,3 @@ document.addEventListener("DOMContentLoaded", async () => {
   await prefillContactUser();
   renderRecentContacts();
 });
-

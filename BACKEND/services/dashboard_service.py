@@ -1017,3 +1017,214 @@ def admin_update_store_settings(admin_id: int, payload: dict) -> dict:
     return get_store_settings()
 
 
+# ============================================================
+# Customer Support & Consultation Tickets (Yêu cầu hỗ trợ)
+# ============================================================
+class SupportTicketNotFoundError(Exception):
+    """Không tìm thấy phiếu yêu cầu hỗ trợ."""
+
+
+def _ensure_support_tickets_table(cur) -> None:
+    cur.execute("SELECT to_regclass('public.support_tickets') AS exists_tbl")
+    row = cur.fetchone()
+    already_existed = bool(row and row.get("exists_tbl"))
+
+    cur.execute(
+        """
+        CREATE TABLE IF NOT EXISTS support_tickets (
+            id          SERIAL PRIMARY KEY,
+            ticket_code VARCHAR(32)  NOT NULL UNIQUE,
+            name        VARCHAR(150) NOT NULL,
+            phone       VARCHAR(50)  NOT NULL,
+            email       VARCHAR(255) NOT NULL,
+            order_code  VARCHAR(60)  NOT NULL DEFAULT '',
+            subject     VARCHAR(255) NOT NULL DEFAULT 'Tư vấn chung',
+            message     TEXT         NOT NULL,
+            status      VARCHAR(32)  NOT NULL DEFAULT 'pending',
+            admin_note  TEXT         NOT NULL DEFAULT '',
+            created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+            updated_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+        )
+        """
+    )
+
+    if not already_existed:
+        cur.execute(
+            """
+            INSERT INTO support_tickets (
+                ticket_code, name, phone, email, order_code, subject, message, status
+            )
+            VALUES
+                (
+                    'AQ-8821',
+                    'Nguyễn Minh Hoàng',
+                    '0912 345 678',
+                    'hoang.nm@gmail.com',
+                    '#102',
+                    'Tư vấn chọn cá & thiết kế bể thủy sinh',
+                    'Mình có bể kính 60x40x40cm đang nuôi 10 con cá Neon Vua, muốn hỏi shop có thể ghép thêm Cá Chuột Panda và Tép Đỏ Red Cherry trong đơn #102 được không ạ?',
+                    'pending'
+                ),
+                (
+                    'AQ-8790',
+                    'Trần Thu Hà',
+                    '0987 654 321',
+                    'thuha.tran@neu.edu.vn',
+                    '#101',
+                    'Hỗ trợ tình trạng đơn hàng & vận chuyển oxy',
+                    'Shop ơi cho mình hỏi đơn #101 giao về Hai Bà Trưng đóng gói túi oxy giữ được tối đa bao lâu để mình sắp xếp người nhận nhé.',
+                    'resolved'
+                )
+            ON CONFLICT (ticket_code) DO NOTHING
+            """
+        )
+
+
+def _serialize_support_ticket(row: dict) -> dict:
+    return {
+        "id": row["id"],
+        "ticket_code": row["ticket_code"],
+        "name": row["name"],
+        "phone": row["phone"],
+        "email": row["email"],
+        "order_code": row.get("order_code") or "",
+        "subject": row.get("subject") or "Tư vấn chung",
+        "message": row["message"],
+        "status": row.get("status") or "pending",
+        "admin_note": row.get("admin_note") or "",
+        "created_at": row["created_at"].isoformat() if row.get("created_at") else None,
+        "updated_at": row["updated_at"].isoformat() if row.get("updated_at") else None,
+    }
+
+
+def create_support_ticket(payload: dict) -> dict:
+    import random
+
+    name = str(payload.get("name") or "").strip()
+    phone = str(payload.get("phone") or "").strip()
+    email = str(payload.get("email") or "").strip()
+    order_code = str(payload.get("order_code") or payload.get("orderCode") or "").strip()
+    subject = str(payload.get("subject") or "Tư vấn chung").strip()
+    message = str(payload.get("message") or "").strip()
+    raw_code = str(payload.get("ticket_code") or payload.get("ticketId") or "").strip()
+    ticket_code = raw_code if raw_code else f"AQ-{random.randint(1000, 9999)}"
+
+    with get_db_cursor(commit=True) as cur:
+        _ensure_support_tickets_table(cur)
+        cur.execute(
+            """
+            INSERT INTO support_tickets (
+                ticket_code, name, phone, email, order_code, subject, message, status
+            )
+            VALUES (%s, %s, %s, %s, %s, %s, %s, 'pending')
+            ON CONFLICT (ticket_code) DO UPDATE SET
+                name = EXCLUDED.name,
+                phone = EXCLUDED.phone,
+                email = EXCLUDED.email,
+                order_code = EXCLUDED.order_code,
+                subject = EXCLUDED.subject,
+                message = EXCLUDED.message,
+                updated_at = NOW()
+            RETURNING *
+            """,
+            (ticket_code, name, phone, email, order_code, subject, message),
+        )
+        row = cur.fetchone()
+    return _serialize_support_ticket(row)
+
+
+def admin_list_support_tickets(
+    status: str | None = None,
+    search: str | None = None,
+) -> dict:
+    conditions = ["1=1"]
+    params = []
+
+    if status in ("pending", "resolved"):
+        conditions.append("status = %s")
+        params.append(status)
+
+    if search and search.strip():
+        kw = f"%{search.strip()}%"
+        conditions.append(
+            "(ticket_code ILIKE %s OR name ILIKE %s OR phone ILIKE %s OR email ILIKE %s OR order_code ILIKE %s OR subject ILIKE %s OR message ILIKE %s)"
+        )
+        params.extend([kw, kw, kw, kw, kw, kw, kw])
+
+    where_clause = " AND ".join(conditions)
+
+    with get_db_cursor(commit=True) as cur:
+        _ensure_support_tickets_table(cur)
+        cur.execute(
+            f"""
+            SELECT *
+            FROM support_tickets
+            WHERE {where_clause}
+            ORDER BY
+                CASE WHEN status = 'pending' THEN 0 ELSE 1 END ASC,
+                created_at DESC,
+                id DESC
+            """,
+            params,
+        )
+        rows = cur.fetchall()
+
+        cur.execute(
+            "SELECT COUNT(*) AS pending_count FROM support_tickets WHERE status = 'pending'"
+        )
+        cnt_row = cur.fetchone()
+        pending_count = int(cnt_row["pending_count"] or 0) if cnt_row else 0
+
+    return {
+        "items": [_serialize_support_ticket(r) for r in rows],
+        "pending_count": pending_count,
+    }
+
+
+def admin_update_support_ticket(
+    ticket_id: int,
+    status: str,
+    admin_note: str | None = None,
+) -> dict:
+    with get_db_cursor(commit=True) as cur:
+        _ensure_support_tickets_table(cur)
+        if admin_note is not None:
+            cur.execute(
+                """
+                UPDATE support_tickets
+                SET status = %s,
+                    admin_note = %s,
+                    updated_at = NOW()
+                WHERE id = %s
+                RETURNING *
+                """,
+                (status, admin_note, ticket_id),
+            )
+        else:
+            cur.execute(
+                """
+                UPDATE support_tickets
+                SET status = %s,
+                    updated_at = NOW()
+                WHERE id = %s
+                RETURNING *
+                """,
+                (status, ticket_id),
+            )
+        row = cur.fetchone()
+    if not row:
+        raise SupportTicketNotFoundError()
+    return _serialize_support_ticket(row)
+
+
+def admin_delete_support_ticket(ticket_id: int) -> dict:
+    with get_db_cursor(commit=True) as cur:
+        _ensure_support_tickets_table(cur)
+        cur.execute(
+            "DELETE FROM support_tickets WHERE id = %s RETURNING *",
+            (ticket_id,),
+        )
+        row = cur.fetchone()
+    if not row:
+        raise SupportTicketNotFoundError()
+    return _serialize_support_ticket(row)
