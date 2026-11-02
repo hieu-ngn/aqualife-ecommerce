@@ -1194,25 +1194,49 @@ async function loadOverview() {
 }
 
 // ==========================================================================
-// PANEL 3: ĐƠN HÀNG (ORDERS)
+// PANEL 3: ĐƠN HÀNG (ORDERS - PHÂN TRANG 10-15 ĐƠN / TRANG)
 // ==========================================================================
-async function loadAdminOrders() {
+let allAdminOrders = [];
+let currentOrderPage = 1;
+let orderPageSize = 12;
+
+function buildCompactPageNumbers(current, total) {
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1);
+  }
+  const pages = [1];
+  const start = Math.max(2, current - 1);
+  const end = Math.min(total - 1, current + 1);
+  if (start > 2) pages.push("...");
+  for (let p = start; p <= end; p++) pages.push(p);
+  if (end < total - 1) pages.push("...");
+  pages.push(total);
+  return pages;
+}
+
+function renderAdminOrdersPage() {
   const tbody = document.getElementById("admin-orders-tbody");
-  const search = document.getElementById("admin-order-search")?.value.trim() || "";
-  const status = document.getElementById("admin-order-status")?.value || "";
+  const infoEl = document.getElementById("orders-pagination-info");
+  const pageBtnsEl = document.getElementById("orders-pagination-btns");
+  if (!tbody) return;
 
-  const params = new URLSearchParams();
-  if (search) params.set("search", search);
-  if (status) params.set("status", status);
+  const sizeSelect = document.getElementById("admin-order-page-size");
+  if (sizeSelect && Number(sizeSelect.value) >= 5) {
+    orderPageSize = Number(sizeSelect.value);
+  }
 
-  try {
-    const orders = await window.Aqualife.apiFetch(`/admin/orders?${params.toString()}`);
-    if (!orders.length) {
-      tbody.innerHTML = `<tr><td colspan="7" class="muted">Không có đơn hàng nào khớp bộ lọc.</td></tr>`;
-      return;
-    }
+  const totalItems = allAdminOrders.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / orderPageSize));
+  if (currentOrderPage > totalPages) currentOrderPage = totalPages;
+  if (currentOrderPage < 1) currentOrderPage = 1;
 
-    tbody.innerHTML = orders
+  const startIdx = (currentOrderPage - 1) * orderPageSize;
+  const pageOrders = allAdminOrders.slice(startIdx, startIdx + orderPageSize);
+
+  if (!pageOrders.length) {
+    tbody.innerHTML = `<tr><td colspan="7" class="muted" style="text-align:center;padding:28px;">Không có đơn hàng nào khớp bộ lọc.</td></tr>`;
+  } else {
+    tbody.innerHTML = pageOrders
       .map((o) => {
         const nextAllowed = NEXT_STATUS_OPTIONS[o.status] || [];
         const itemsSummary = (o.items || [])
@@ -1255,6 +1279,65 @@ async function loadAdminOrders() {
         `;
       })
       .join("");
+  }
+
+  if (infoEl) {
+    const from = totalItems === 0 ? 0 : startIdx + 1;
+    const to = Math.min(totalItems, startIdx + orderPageSize);
+    infoEl.textContent = `Hiển thị ${from}–${to} trên tổng ${totalItems} đơn hàng (Trang ${currentOrderPage}/${totalPages})`;
+  }
+
+  if (pageBtnsEl) {
+    if (totalPages <= 1) {
+      pageBtnsEl.innerHTML = "";
+    } else {
+      const compactPages = buildCompactPageNumbers(currentOrderPage, totalPages);
+      let html = `<button type="button" class="adm-page-btn" data-order-page="${currentOrderPage - 1}" ${
+        currentOrderPage <= 1 ? "disabled" : ""
+      } title="Trang trước">‹ Trước</button>`;
+
+      for (const p of compactPages) {
+        if (p === "...") {
+          html += `<span class="muted" style="padding:0 6px;user-select:none;">…</span>`;
+        } else {
+          html += `<button type="button" class="adm-page-btn ${
+            p === currentOrderPage ? "active" : ""
+          }" data-order-page="${p}">${p}</button>`;
+        }
+      }
+
+      html += `<button type="button" class="adm-page-btn" data-order-page="${currentOrderPage + 1}" ${
+        currentOrderPage >= totalPages ? "disabled" : ""
+      } title="Trang sau">Sau ›</button>`;
+
+      pageBtnsEl.innerHTML = html;
+      pageBtnsEl.querySelectorAll("button[data-order-page]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          if (btn.disabled) return;
+          const targetPage = Number(btn.dataset.orderPage || 1);
+          if (targetPage >= 1 && targetPage <= totalPages && targetPage !== currentOrderPage) {
+            currentOrderPage = targetPage;
+            renderAdminOrdersPage();
+          }
+        });
+      });
+    }
+  }
+}
+
+async function loadAdminOrders(resetPage = true) {
+  const search = document.getElementById("admin-order-search")?.value.trim() || "";
+  const status = document.getElementById("admin-order-status")?.value || "";
+
+  const params = new URLSearchParams();
+  if (search) params.set("search", search);
+  if (status) params.set("status", status);
+
+  try {
+    allAdminOrders = await window.Aqualife.apiFetch(`/admin/orders?${params.toString()}`);
+    if (!Array.isArray(allAdminOrders)) allAdminOrders = [];
+    if (resetPage) currentOrderPage = 1;
+    renderAdminOrdersPage();
   } catch (err) {
     window.Aqualife.showToast(err.message, "error");
   }
@@ -1436,9 +1519,14 @@ async function loadAdminSupportTickets() {
 }
 
 function bindOrderEvents() {
-  document.getElementById("admin-order-filter-btn")?.addEventListener("click", loadAdminOrders);
+  document.getElementById("admin-order-filter-btn")?.addEventListener("click", () => loadAdminOrders(true));
+  document.getElementById("admin-order-status")?.addEventListener("change", () => loadAdminOrders(true));
+  document.getElementById("admin-order-page-size")?.addEventListener("change", () => {
+    currentOrderPage = 1;
+    renderAdminOrdersPage();
+  });
   document.getElementById("admin-order-search")?.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") loadAdminOrders();
+    if (e.key === "Enter") loadAdminOrders(true);
   });
 
   // Sự kiện nút nhảy nhanh xuống bảng Yêu cầu hỗ trợ
@@ -1527,7 +1615,7 @@ function bindOrderEvents() {
         `Đơn #${orderId} đã chuyển sang "${STATUS_LABELS[newStatus] || newStatus}"!`,
         "success"
       );
-      await loadAdminOrders();
+      await loadAdminOrders(false);
       await loadAdminProducts();
     } catch (err) {
       window.Aqualife.showToast(err.message, "error");

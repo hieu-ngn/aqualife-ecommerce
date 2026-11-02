@@ -453,7 +453,7 @@
                 <i class="fa-solid fa-magnifying-glass"></i>
                 <input id="admin-order-search" class="adm-input" type="search" placeholder="Tìm theo mã đơn, tên khách, SĐT, email..." />
               </div>
-              <select id="admin-order-status" class="adm-select" style="width:240px;">
+              <select id="admin-order-status" class="adm-select" style="width:220px;">
                 <option value="">Tất cả trạng thái đơn</option>
                 <option value="pending">Chờ xác nhận (pending)</option>
                 <option value="confirmed">Đã xác nhận (confirmed)</option>
@@ -461,6 +461,11 @@
                 <option value="shipping">Đang giao (shipping)</option>
                 <option value="completed">Hoàn tất (completed)</option>
                 <option value="cancelled">Đã hủy (cancelled)</option>
+              </select>
+              <select id="admin-order-page-size" class="adm-select" style="width:160px;" title="Số đơn hiển thị mỗi trang">
+                <option value="10">10 đơn / trang</option>
+                <option value="12" selected>12 đơn / trang</option>
+                <option value="15">15 đơn / trang</option>
               </select>
               <button type="button" id="admin-order-filter-btn" class="btn-adm-primary">Lọc đơn hàng</button>
             </div>
@@ -482,6 +487,11 @@
                 </thead>
                 <tbody id="admin-orders-tbody"></tbody>
               </table>
+            </div>
+
+            <div class="adm-table-footer">
+              <div id="orders-pagination-info">Hiển thị 0 / 0 đơn hàng</div>
+              <div class="adm-page-btns" id="orders-pagination-btns"></div>
             </div>
           </div>
 
