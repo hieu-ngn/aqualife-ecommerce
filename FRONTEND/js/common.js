@@ -338,7 +338,7 @@ function addToCart(productId, quantity = 1, selectedSize = null) {
 function updateCartItemQty(productId, newQuantity) {
   const qty = Number(newQuantity);
   if (Number.isNaN(qty) || qty < 0) {
-    showToast("S? l??ng nh?p v?o kh?ng h?p l?.", "error");
+    showToast("Số lượng nhập vào không hợp lệ.", "error");
     return false;
   }
 
@@ -348,14 +348,14 @@ function updateCartItemQty(productId, newQuantity) {
   const numericId = Number(canonicalId);
   const isLoggedIn = Boolean(localStorage.getItem("aqualife_user"));
 
-  // Ng??i d?ng nh?p s? 0 ???c hi?u l? x?a d?ng s?n ph?m ?? kh?i gi? h?ng
+  // Người dùng nhập số 0 được hiểu là xóa dòng sản phẩm đó khỏi giỏ hàng
   if (qty <= 0) {
     delete cart[canonicalId];
     saveCart(cart);
     showToast(
       product
-        ? `?? x?a "${product.name}" kh?i gi? h?ng (nh?p s? l??ng = 0).`
-        : "?? x?a s?n ph?m kh?i gi? h?ng.",
+        ? `Đã xóa "${product.name}" khỏi giỏ hàng (nhập số lượng = 0).`
+        : "Đã xóa sản phẩm khỏi giỏ hàng.",
       "success"
     );
     if (Number.isInteger(numericId) && numericId > 0) {
@@ -372,7 +372,7 @@ function updateCartItemQty(productId, newQuantity) {
   const curStock = getSizeStock(product, curSize);
   if (product && curStock !== null && qty > curStock) {
     showToast(
-      `S?n ph?m "${product.name}"${curSize ? ` (${curSize})` : ""} ch? c?n t?i ?a ${curStock} s?n ph?m trong kho.`,
+      `Sản phẩm "${product.name}"${curSize ? ` (${curSize})` : ""} chỉ còn tối đa ${curStock} sản phẩm trong kho.`,
       "error"
     );
     return false;
@@ -600,11 +600,65 @@ const LOCAL_ROLE_LABELS = {
   Tép: "Đội vệ sinh tầng đáy (Dọn thức ăn thừa & rêu tơ)",
 };
 
+const OFF_TOPIC_CLIENT_KEYWORDS = [
+  "thời tiết", "thoi tiet", "mưa", "nắng", "bóng đá", "bong da", "world cup", "ngoại hạng",
+  "chứng khoán", "chung khoan", "bitcoin", "crypto", "bất động sản",
+  "điện thoại", "dien thoai", "iphone", "samsung", "xiaomi", "oppo", "laptop", "macbook",
+  "máy tính", "may tinh", "quần áo", "quan ao", "giày dép", "túi xách",
+  "mỹ phẩm", "son môi", "nước hoa", "xe máy", "ô tô", "xe hơi", "honda", "yamaha",
+  "nấu ăn", "nau an", "cơm rang", "phở bò", "bún chả", "trà sữa", "cà phê", "lẩu",
+  "xem phim", "ca nhạc", "ca sĩ", "diễn viên", "bài hát", "game", "liên quân", "lmht", "pubg",
+  "lập trình", "lap trinh", "code python", "javascript", "java", "c++", "html", "css",
+  "giải toán", "phương trình", "đạo hàm", "tích phân", "vật lý", "hóa học", "lịch sử", "địa lý",
+  "tổng thống", "chính trị", "chiến tranh", "người yêu", "tán gái", "bói toán", "tử vi", "xổ số"
+];
+
+const AQUARIUM_CLIENT_KEYWORDS = [
+  "cá", "tép", "tôm", "ốc", "san hô", "hải quỳ", "thủy sinh", "rong", "rêu", "tảo",
+  "dương xỉ", "tiêu thảo", "bể", "hồ", "nước mặn", "nước ngọt", "nước lợ", "cá biển",
+  "mặn", "ngọt", "lợ", "nemo", "thia", "hoàng đế", "bướm", "trạng nguyên", "betta",
+  "guppy", "bảy màu", "oranda", "đầu lân", "piranha", "cá chuột", "longfin", "mahseer",
+  "mương hoa", "chạch", "botia", "thần tiên", "kim sơn", "bống", "mập", "nerita",
+  "nerite", "turbo", "trochus", "ramshorn", "ốc táo", "mặt trăng", "amano", "su la",
+  "sula", "rili", "fire red", "blue dream", "socola", "ong đỏ", "vàng thái", "vàng đài",
+  "peppermint", "bác sĩ", "blood red", "coral banded", "tép ma", "xenia", "toadstool",
+  "zoanthid", "hammer", "torch", "lọc", "sủi", "oxy", "đèn", "sưởi", "vi sinh",
+  "độ mặn", "nhiệt độ", "thay nước", "nuôi", "thả", "ghép", "cắn", "thức ăn", "cám",
+  "size", "combo", "build", "setup", "set up", "aqualife"
+];
+
+function stripVietnameseAccents(str) {
+  return String(str || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D");
+}
+
+function classifyDomainClient(message) {
+  const lower = String(message || "").toLowerCase().trim();
+  if (!lower) return "greeting";
+  if (/^(?:xin chào|chào|chào shop|chào bạn|hello|hi|hey|alo|shop ơi|ad ơi|tư vấn|tư vấn giúp)[!.,?\s]*$/.test(lower)) {
+    return "greeting";
+  }
+  for (const bad of OFF_TOPIC_CLIENT_KEYWORDS) {
+    if (lower.includes(bad)) return "off_topic";
+  }
+  for (const kw of AQUARIUM_CLIENT_KEYWORDS) {
+    if (lower.includes(kw)) return "aquarium";
+  }
+  const ascii = stripVietnameseAccents(lower);
+  if (/\b(ca|tep|tom|oc|san ho|hai quy|thuy sinh|be|ho ca|nuoc man|nuoc ngot|nuoc lo|ca bien|setup|build|combo|nemo|betta|guppy|piranha|mahseer|botia|nerita|turbo|trochus|amano|xenia|zoanthid|hammer|torch|ph)\b/.test(ascii)) {
+    return "aquarium";
+  }
+  return "off_topic";
+}
+
 function parseVietnameseBudgetClient(text) {
   const lower = String(text || "")
     .toLowerCase()
     .replace(/,/g, ".");
-  const mTrCombo = lower.match(/(\d+)\s*(?:tr|triệu|củ)\s*(\d+)/);
+  const mTrCombo = lower.match(/(\d+)\s*(?:tr|triệu|trieu|củ|cu)\s*(\d+)/);
   if (mTrCombo) {
     const m = parseInt(mTrCombo[1], 10);
     const d = parseInt(mTrCombo[2], 10);
@@ -617,24 +671,129 @@ function parseVietnameseBudgetClient(text) {
   const cleaned = lower.replace(/\.(\d{3})\b/g, "$1");
   const mNum = cleaned.match(/\b(\d{5,8})\b/);
   if (mNum) return parseInt(mNum[1], 10);
+  const mShort = lower.match(/\b([2-9]\d|[1-9]\d{2,3})\b(?!\s*(?:cm|mm|lít|lit|l\b|con|cá thể|°|độ|%))/);
+  if (mShort) {
+    const val = parseInt(mShort[1], 10);
+    if (val >= 15 && val <= 9999) return val * 1000;
+  }
   return 500000;
 }
 
 function parseWaterTypeClient(text) {
   const lower = String(text || "").toLowerCase();
-  if (/nước mặn|nuoc man|cá biển|ca bien|san hô|san ho|hải quỳ|nemo|đại dương|mặn/.test(lower)) {
+  const ascii = stripVietnameseAccents(lower);
+  if (/nước mặn|nuoc man|cá biển|ca bien|san hô|san ho|hải quỳ|nemo|đại dương|hoàng đế|cá bướm|trạng nguyên|thia xanh|mặn/.test(lower) || /nuoc man|ca bien|san ho/.test(ascii)) {
     return "Nước mặn";
   }
-  if (/nước lợ|nuoc lo|ngập mặn|cá nóc|bắn tỉa|bống rồng|bống hiệp sĩ|ong mật|lợ/.test(lower)) {
+  if (/nước lợ|nuoc lo|ngập mặn|cá nóc|bắn tỉa|bống rồng|bống hiệp sĩ|ong mật|lợ/.test(lower) || /nuoc lo/.test(ascii)) {
     return "Nước lợ";
   }
   return "Nước ngọt";
 }
 
+function detectRequestedSpeciesClient(text) {
+  const lower = String(text || "").toLowerCase();
+  const ascii = stripVietnameseAccents(lower);
+  if (/build bể|build hồ|setup bể|set up bể|combo bể|trọn bộ|cấu hình bể|gồm những gì|build be|setup be|combo be/.test(lower + " " + ascii)) {
+    return null;
+  }
+  const groups = new Set();
+  const cleanedCa = lower.replace(/\b(?:bể|hồ)\s+cá\b/g, "");
+  const cleanedCaAscii = ascii.replace(/\b(?:be|ho)\s+ca\b/g, "");
+  if (/\bcá\b/.test(cleanedCa) || /\bca\b/.test(cleanedCaAscii)) groups.add("Cá");
+  if (/\b(?:tép|tôm)\b/.test(lower) || /\b(?:tep|tom)\b/.test(ascii)) groups.add("Tép");
+  if (/\bốc\b/.test(lower) || /\boc\b/.test(ascii)) groups.add("Ốc");
+  if (/san hô|cây thủy sinh|rong|dương xỉ|tiêu thảo|san ho/.test(lower + " " + ascii)) groups.add("Thủy Sinh / San hô");
+  if (groups.size === 1) return Array.from(groups)[0];
+  return null;
+}
+
 async function buildComboFallbackClient(message, variantIndex = 0) {
+  const domain = classifyDomainClient(message);
+  if (domain === "off_topic") {
+    return {
+      mode: "off_topic",
+      query: message,
+      reply_html:
+        'Xin lỗi, <strong>Chatbox không hỗ trợ</strong> câu hỏi ngoài lĩnh vực bể cá và thủy sinh.<br><br>Trợ lý Aqualife chỉ tư vấn chọn <strong>cá cảnh, tép, ốc, san hô</strong>, thông số môi trường nước (Nước mặn, Nước ngọt, Nước lợ) và thiết lập bể theo ngân sách. Bạn có thể hỏi ví dụ: <em>"Cá 500 nước mặn có thể chọn cá nào?"</em> hoặc <em>"500k nước mặn build bể thế nào?"</em> nhé!',
+      items: [],
+    };
+  }
+  if (domain === "greeting") {
+    return {
+      mode: "greeting",
+      query: message,
+      reply_html:
+        'Xin chào bạn đến với <strong>Trợ lý Tư vấn Bể cá Aqualife</strong>! 🐠<br>Mình có thể giúp bạn:<br>• <strong>Chọn cá / tép / ốc / san hô theo tầm tiền:</strong> VD: <em>"Cá 500 nước mặn có thể chọn cá nào?"</em><br>• <strong>Build trọn bộ hệ sinh thái bể:</strong> VD: <em>"500k nước mặn nên build bể như thế nào?"</em><br>• <strong>Tra cứu giá & tập tính từng loài:</strong> VD: <em>"Cá Nemo giá bao nhiêu?"</em>',
+      items: [],
+    };
+  }
+
   const budget = parseVietnameseBudgetClient(message);
   const waterType = parseWaterTypeClient(message);
+  const targetSpecies = detectRequestedSpeciesClient(message);
   const products = await loadProducts();
+  const guide = LOCAL_WATER_GUIDES[waterType] || LOCAL_WATER_GUIDES["Nước ngọt"];
+
+  const minPriceOf = (p) => {
+    const sizes = Array.isArray(p.sizes) && p.sizes.length ? p.sizes : buildDefaultSizes(p.price);
+    return Math.min(...sizes.map((s) => Number(s.price || p.price)));
+  };
+
+  if (targetSpecies) {
+    const envSpeciesProds = products
+      .filter(
+        (p) =>
+          (p.waterType || p.water_type || "Nước ngọt") === waterType &&
+          (p.species || "Cá") === targetSpecies &&
+          Number(p.stock ?? 10) > 0
+      )
+      .sort((a, b) => minPriceOf(a) - minPriceOf(b));
+
+    const affordable = envSpeciesProds.filter((p) => minPriceOf(p) <= budget);
+    const catalogOptions = affordable.map((p) => {
+      const sizes = Array.isArray(p.sizes) && p.sizes.length ? p.sizes : buildDefaultSizes(p.price);
+      const validSizes = sizes.filter((s) => Number(s.price || p.price) <= budget);
+      const bestSize = validSizes[0] || sizes[0];
+      const unitP = Number(bestSize.price || p.price);
+      const maxQty = Math.max(1, Math.floor(budget / unitP));
+      return {
+        id: p.id,
+        slug: p.slug || String(p.id),
+        name: p.name,
+        image: p.image || "image/ocean-bg.svg",
+        species: targetSpecies,
+        role_label: `Lựa chọn ${targetSpecies} ${waterType} (≤ ${formatCurrency(budget)})`,
+        water_type: waterType,
+        selected_size: bestSize.size,
+        unit_price: unitP,
+        quantity: 1,
+        subtotal: unitP,
+        max_qty_in_budget: maxQty,
+      };
+    });
+
+    const bulletLines = catalogOptions.map(
+      (opt) =>
+        `• <strong>${opt.name}</strong> — Giá từ <strong>${formatCurrency(opt.unit_price)}</strong> (Với ${formatCurrency(budget)} mua được tối đa <strong>${opt.max_qty_in_budget} cá thể</strong>)`
+    );
+    const totalCost = catalogOptions.reduce((s, i) => s + i.subtotal, 0);
+    return {
+      mode: "species_select",
+      query: message,
+      budget,
+      water_type: waterType,
+      target_species: targetSpecies,
+      variant_index: variantIndex,
+      total_cost: totalCost,
+      remaining_budget: Math.max(0, budget - totalCost),
+      total_creatures: catalogOptions.length,
+      guide,
+      reply_html: `Với ngân sách <strong>${formatCurrency(budget)}</strong> cho môi trường <strong>${waterType}</strong>, bạn có thể chọn <strong>${catalogOptions.length} dòng ${targetSpecies}</strong> sau:<br><div style="margin:8px 0;line-height:1.6;">${bulletLines.join("<br>")}</div>`,
+      items: catalogOptions,
+    };
+  }
+
   const envProds = products.filter(
     (p) => (p.waterType || p.water_type || "Nước ngọt") === waterType && Number(p.stock ?? 10) > 0
   );
@@ -645,11 +804,6 @@ async function buildComboFallbackClient(message, variantIndex = 0) {
     if (!bySpecies[sp]) bySpecies[sp] = [];
     bySpecies[sp].push(p);
   });
-
-  const minPriceOf = (p) => {
-    const sizes = Array.isArray(p.sizes) && p.sizes.length ? p.sizes : buildDefaultSizes(p.price);
-    return Math.min(...sizes.map((s) => Number(s.price || p.price)));
-  };
 
   Object.keys(bySpecies).forEach((k) => {
     bySpecies[k].sort((a, b) => minPriceOf(a) - minPriceOf(b));
@@ -734,8 +888,8 @@ async function buildComboFallbackClient(message, variantIndex = 0) {
   }
 
   const totalCost = comboItems.reduce((s, i) => s + i.subtotal, 0);
-  const guide = LOCAL_WATER_GUIDES[waterType] || LOCAL_WATER_GUIDES["Nước ngọt"];
   return {
+    mode: "tank_combo",
     query: message,
     budget,
     water_type: waterType,
@@ -762,7 +916,7 @@ function initAiTankAdvisor() {
     document.body.appendChild(fab);
   }
 
-  // Tạo Modal Chatbot Tư vấn Build Bể tối giản (không icon)
+  // Tạo Modal Chatbot Tư vấn Build Bể & Chọn Cá thông minh
   if (!document.getElementById("aqualife-advisor-modal")) {
     const backdrop = document.createElement("div");
     backdrop.id = "aqualife-advisor-modal";
@@ -771,32 +925,33 @@ function initAiTankAdvisor() {
       <div class="aq-advisor-window" role="dialog" aria-label="Tư vấn Build Bể Aqualife">
         <div class="aq-advisor-header">
           <div>
-            <h3 class="aq-advisor-title">Trợ lý Tư vấn Build Bể</h3>
-            <p class="aq-advisor-subtitle">Nhập ngân sách và môi trường nước (VD: 500k nước mặn build bể như thế nào)</p>
+            <h3 class="aq-advisor-title">Trợ lý Tư vấn Bể Cá & Sinh Vật Aqualife</h3>
+            <p class="aq-advisor-subtitle">Hỏi chọn cá theo tầm tiền (VD: cá 500 nước mặn chọn cá nào?) hoặc tư vấn build trọn bộ bể</p>
           </div>
           <button type="button" class="aq-advisor-close" id="aq-advisor-close-btn" title="Đóng">Đóng</button>
         </div>
 
         <div class="aq-advisor-quickbar">
           <span style="font-size:12px;font-weight:700;color:#475569;">Gợi ý:</span>
+          <button type="button" class="aq-advisor-chip" data-prompt="Cá 500 nước mặn có thể chọn cá nào?">
+            Cá 500k Nước mặn chọn cá nào?
+          </button>
           <button type="button" class="aq-advisor-chip" data-prompt="500k nước mặn nên build bể cá như thế nào (gồm cá, ốc, tép, san hô)?">
-            500k Nước mặn
+            Build bể 500k Nước mặn
           </button>
           <button type="button" class="aq-advisor-chip" data-prompt="300k nước ngọt nên build bể thủy sinh gồm những gì?">
-            300k Nước ngọt
+            Build bể 300k Nước ngọt
           </button>
           <button type="button" class="aq-advisor-chip" data-prompt="400k nước lợ build bể cá gồm những gì?">
-            400k Nước lợ
-          </button>
-          <button type="button" class="aq-advisor-chip" data-prompt="1 triệu nước mặn build bể cá biển và san hô cao cấp">
-            1 Triệu Nước mặn
+            Build bể 400k Nước lợ
           </button>
         </div>
 
         <div class="aq-advisor-messages" id="aq-advisor-messages">
           <div class="aq-chat-msg aq-chat-msg--bot">
             <div class="aq-chat-bubble">
-              Xin chào! Bạn hãy nhập <strong>ngân sách</strong> (VD: 300k, 500k, 1 triệu) và <strong>môi trường nước</strong> (Nước mặn, Nước ngọt, Nước lợ). Hệ thống sẽ gợi ý cấu hình bể phù hợp gồm Cá cảnh chủ đạo, San hô / Cây thủy sinh, Ốc dọn rêu và Tép vệ sinh.
+              Xin chào! Bạn có thể hỏi chọn <strong>loài cá / tép / ốc / san hô theo tầm giá</strong> (VD: <em>"Cá 500 nước mặn có thể chọn cá nào?"</em>), hỏi <strong>build trọn bộ bể</strong> theo ngân sách, hoặc hỏi <strong>thông tin nuôi ghép từng loài</strong>.<br>
+              <span style="font-size:12px;color:#64748b;">(Lưu ý: Chatbox chỉ hỗ trợ các chủ đề liên quan đến bể cá và thủy sinh tại Aqualife).</span>
             </div>
           </div>
         </div>
@@ -806,7 +961,7 @@ function initAiTankAdvisor() {
             type="text"
             id="aq-advisor-input"
             class="aq-advisor-input"
-            placeholder="Nhập yêu cầu... VD: 500k nước mặn nên build bể cá như thế nào?"
+            placeholder="VD: Cá 500 nước mặn có thể chọn cá nào? hoặc 500k nước ngọt build bể..."
             autocomplete="off"
           />
           <button type="submit" class="aq-advisor-send">Gửi</button>
@@ -858,11 +1013,26 @@ function initAiTankAdvisor() {
       data = await buildComboFallbackClient(promptText, variantIdx);
     }
 
-    if (!data || !Array.isArray(data.items)) return;
+    if (!data) return;
 
-    const guide = data.guide || LOCAL_WATER_GUIDES[data.water_type] || LOCAL_WATER_GUIDES["Nước ngọt"];
     const botMsg = document.createElement("div");
     botMsg.className = "aq-chat-msg aq-chat-msg--bot";
+
+    // Nếu câu hỏi ngoài lĩnh vực bể cá (off_topic) hoặc chào hỏi (greeting) không có danh sách sản phẩm
+    if (data.mode === "off_topic" || data.mode === "greeting" || !Array.isArray(data.items) || data.items.length === 0) {
+      botMsg.innerHTML = `
+        <div class="aq-chat-bubble" style="${
+          data.mode === "off_topic" ? "border-left: 4px solid #ef4444; background: #fff5f5;" : ""
+        }">
+          ${data.reply_html || data.summary_text || "Xin lỗi, Chatbox không hỗ trợ câu hỏi ngoài lĩnh vực bể cá."}
+        </div>
+      `;
+      messagesBox.appendChild(botMsg);
+      messagesBox.scrollTop = messagesBox.scrollHeight;
+      return;
+    }
+
+    const guide = data.guide || LOCAL_WATER_GUIDES[data.water_type] || LOCAL_WATER_GUIDES["Nước ngọt"];
 
     const itemsHtml = data.items
       .map(
@@ -878,6 +1048,11 @@ function initAiTankAdvisor() {
             </div>
             <div class="aq-combo-meta">
               Kích thước: <strong>${item.selected_size}</strong> | Số lượng: <strong>${item.quantity}</strong> × ${formatCurrency(item.unit_price)}
+              ${
+                item.max_qty_in_budget
+                  ? `<br><span style="color:#0284c7;font-weight:600;">→ Mua lẻ được tối đa ${item.max_qty_in_budget} cá thể trong tầm ${formatCurrency(data.budget)}</span>`
+                  : ""
+              }
             </div>
           </div>
           <div class="aq-combo-right">
@@ -891,13 +1066,17 @@ function initAiTankAdvisor() {
       )
       .join("");
 
-    botMsg.innerHTML = `
-      <div class="aq-chat-bubble">
-        <div>
+    const headerHtml = data.reply_html
+      ? `<div>${data.reply_html}</div>`
+      : `<div>
           Với ngân sách <strong>${formatCurrency(data.budget)}</strong> cho môi trường <strong>${data.water_type}</strong>
           ${variantIdx > 0 ? `(Phương án ${variantIdx + 1})` : ""}, gợi ý cấu hình bể gồm
           <strong>${data.items.length} loài (${data.total_creatures} cá thể)</strong>:
-        </div>
+        </div>`;
+
+    botMsg.innerHTML = `
+      <div class="aq-chat-bubble">
+        ${headerHtml}
 
         <div class="aq-combo-guide">
           <div><strong>Thông số ${data.water_type}:</strong> Nhiệt độ ${guide.temp} | pH ${guide.ph} | Độ mặn ${guide.salinity}</div>
@@ -910,12 +1089,16 @@ function initAiTankAdvisor() {
 
         <div class="aq-combo-summary-bar">
           <div>
-            <span style="font-size:13px;color:#475569;">Tổng chi phí:</span>
+            <span style="font-size:13px;color:#475569;">Tổng chi phí danh sách trên:</span>
             <strong style="font-size:16px;color:#0b6aa2;margin-left:6px;">${formatCurrency(data.total_cost)}</strong>
           </div>
-          <div style="font-size:12.5px;color:#475569;">
-            Còn dư: <strong>${formatCurrency(data.remaining_budget)}</strong>
-          </div>
+          ${
+            data.mode === "tank_combo" || variantIdx > 0
+              ? `<div style="font-size:12.5px;color:#475569;">
+                   Còn dư: <strong>${formatCurrency(data.remaining_budget)}</strong>
+                 </div>`
+              : ""
+          }
         </div>
 
         <div class="aq-combo-actions">
@@ -923,7 +1106,7 @@ function initAiTankAdvisor() {
             Thêm toàn bộ vào giỏ hàng
           </button>
           <button type="button" class="aq-btn-alt-combo">
-            Gợi ý phương án khác
+            Gợi ý phương án phối khác
           </button>
         </div>
       </div>
@@ -943,7 +1126,7 @@ function initAiTankAdvisor() {
         addToCart(item.id, item.quantity, item.selected_size);
       });
       showToast(
-        `Đã thêm trọn bộ Combo ${data.water_type} (${data.total_creatures} cá thể) vào giỏ hàng!`,
+        `Đã thêm ${data.items.length} dòng sinh vật (${data.water_type}) vào giỏ hàng!`,
         "success"
       );
     });

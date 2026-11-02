@@ -416,3 +416,33 @@ def test_ai_tank_builder_advisor(client):
     assert "Ốc" in species_in_combo
 
 
+def test_ai_advisor_species_and_off_topic_guard(client):
+    # 1. Hỏi chọn cá 500 nước mặn ("cá 500 nước mặn có thể chọn cá nào")
+    res_fish = client.post(
+        "/api/advisor/chat",
+        json={"message": "cá 500 nước mặn có thể chọn cá nào"},
+    )
+    assert res_fish.status_code == 200
+    d_fish = res_fish.get_json()["data"]
+    assert d_fish["mode"] == "species_select"
+    assert d_fish["budget"] == 500000
+    assert d_fish["water_type"] == "Nước mặn"
+    assert d_fish["target_species"] == "Cá"
+    assert len(d_fish["items"]) >= 3
+    for item in d_fish["items"]:
+        assert item["species"] == "Cá"
+        assert item["unit_price"] <= 500000
+
+    # 2. Hỏi ngoài vấn đề bể cá -> luôn trả lời không hỗ trợ
+    for off_msg in (
+        "hôm nay thời tiết thế nào?",
+        "tư vấn mua điện thoại iphone 500k",
+        "1 + 1 bằng mấy",
+        "code python giải phương trình bậc 2",
+    ):
+        res_off = client.post("/api/advisor/chat", json={"message": off_msg})
+        assert res_off.status_code == 200
+        d_off = res_off.get_json()["data"]
+        assert d_off["mode"] == "off_topic"
+        assert d_off["items"] == []
+        assert "Chatbox không hỗ trợ" in d_off["reply_html"]
