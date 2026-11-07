@@ -134,7 +134,9 @@ def get_dashboard_overview() -> dict:
         cur.execute(
             """
             SELECT o.id, o.user_id, u.name AS user_name, u.email AS user_email,
-                   o.total_amount, o.status, o.shipping_name, o.shipping_phone,
+                   o.total_amount, o.subtotal_amount, o.shipping_method, o.shipping_fee,
+                   o.voucher_code, o.discount_amount,
+                   o.status, o.shipping_name, o.shipping_phone,
                    o.shipping_address, o.payment_method, o.created_at, o.updated_at
             FROM orders o
             LEFT JOIN users u ON u.id = o.user_id
@@ -463,7 +465,9 @@ def admin_list_orders(status: str | None = None, search: str | None = None) -> l
         cur.execute(
             f"""
             SELECT o.id, o.user_id, u.name AS user_name, u.email AS user_email,
-                   o.total_amount, o.status, o.shipping_name, o.shipping_phone,
+                   o.total_amount, o.subtotal_amount, o.shipping_method, o.shipping_fee,
+                   o.voucher_code, o.discount_amount,
+                   o.status, o.shipping_name, o.shipping_phone,
                    o.shipping_address, o.payment_method, o.created_at, o.updated_at
             FROM orders o
             LEFT JOIN users u ON u.id = o.user_id
@@ -511,7 +515,8 @@ def admin_update_order_status(order_id: int, new_status: str) -> dict:
     with get_db_cursor(commit=True) as cur:
         cur.execute(
             """
-            SELECT id, user_id, total_amount, status,
+            SELECT id, user_id, total_amount, subtotal_amount, shipping_method,
+                   shipping_fee, voucher_code, discount_amount, status,
                    shipping_name, shipping_phone, shipping_address,
                    payment_method, created_at, updated_at
             FROM orders
@@ -540,7 +545,8 @@ def admin_update_order_status(order_id: int, new_status: str) -> dict:
             UPDATE orders
             SET status = %s
             WHERE id = %s
-            RETURNING id, user_id, total_amount, status,
+            RETURNING id, user_id, total_amount, subtotal_amount, shipping_method,
+                      shipping_fee, voucher_code, discount_amount, status,
                       shipping_name, shipping_phone, shipping_address,
                       payment_method, created_at, updated_at
             """,
@@ -548,8 +554,13 @@ def admin_update_order_status(order_id: int, new_status: str) -> dict:
         )
         updated_order = cur.fetchone()
 
-        # If transitioning to cancelled, restore stock
+        # If transitioning to cancelled, restore stock and voucher usage count
         if new_status == "cancelled" and current_status != "cancelled":
+            if order.get("voucher_code"):
+                cur.execute(
+                    "UPDATE vouchers SET used_count = GREATEST(0, used_count - 1) WHERE code = %s",
+                    (order["voucher_code"],),
+                )
             cur.execute(
                 """
                 SELECT product_id, quantity, size_label

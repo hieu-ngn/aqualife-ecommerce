@@ -11,3 +11,6 @@ order_bp.add_url_rule(
 order_bp.add_url_rule(
     "/<int:order_id>/cancel", view_func=order_controller.cancel_order, methods=["PATCH"]
 )
+order_bp.add_url_rule("/vouchers", view_func=order_controller.list_vouchers, methods=["GET"])
+order_bp.add_url_rule("/vouchers/apply", view_func=order_controller.apply_voucher, methods=["POST"])
+

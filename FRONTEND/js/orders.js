@@ -117,7 +117,16 @@ document.addEventListener("DOMContentLoaded", async () => {
         <div style="background:#f8fafc;padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:0.94rem;">
           <p style="margin:4px 0;"><strong>Người nhận:</strong> ${order.shipping_name} &nbsp;|&nbsp; <strong>SĐT:</strong> ${order.shipping_phone}</p>
           <p style="margin:4px 0;"><strong>Địa chỉ giao hàng:</strong> ${order.shipping_address}</p>
-          <p style="margin:4px 0;"><strong>Phương thức thanh toán:</strong> ${PAYMENT_LABELS[order.payment_method] || order.payment_method}</p>
+          <p style="margin:4px 0;">
+            <strong>Phương thức thanh toán:</strong> ${PAYMENT_LABELS[order.payment_method] || order.payment_method}
+            &nbsp;|&nbsp;
+            <strong>Vận chuyển:</strong> ${order.shipping_method === "express" ? "⚡ Giao hỏa tốc" : "🚚 Giao tiêu chuẩn"} (${Number(order.shipping_fee) === 0 ? "Miễn phí" : Aqualife.formatCurrency(order.shipping_fee || 0)})
+          </p>
+          ${
+            order.voucher_code
+              ? `<p style="margin:4px 0;color:#0284c7;"><strong>Mã voucher đã dùng:</strong> <span style="font-weight:700;background:#e0f2fe;padding:2px 8px;border-radius:4px;">${order.voucher_code}</span> (Tiết kiệm ${Aqualife.formatCurrency(order.discount_amount || 0)})</p>`
+              : ""
+          }
         </div>
 
         <h4 style="margin:0 0 8px 0;">Danh sách Chi tiết Sản phẩm (OrderDetail JOIN Product)</h4>
@@ -139,9 +148,18 @@ document.addEventListener("DOMContentLoaded", async () => {
           </table>
         </div>
 
-        <div style="display:flex;justify-content:flex-end;margin-top:14px;font-size:1.1rem;">
-          <strong>Tổng cộng đơn hàng: &nbsp;</strong>
-          <span class="price">${Aqualife.formatCurrency(order.total_amount)}</span>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;margin-top:14px;gap:4px;font-size:0.94rem;">
+          <div>Tạm tính hàng: <strong>${Aqualife.formatCurrency(order.subtotal_amount || order.total_amount)}</strong></div>
+          <div>Phí vận chuyển: <strong>${Number(order.shipping_fee) === 0 ? "Miễn phí" : Aqualife.formatCurrency(order.shipping_fee || 0)}</strong></div>
+          ${
+            order.voucher_code
+              ? `<div style="color:#16a34a;">Giảm giá (${order.voucher_code}): <strong>-${Aqualife.formatCurrency(order.discount_amount || 0)}</strong></div>`
+              : ""
+          }
+          <div style="font-size:1.15rem;margin-top:4px;border-top:1px solid #cbd5e1;padding-top:6px;">
+            <strong>Tổng cộng đơn hàng: &nbsp;</strong>
+            <span class="price">${Aqualife.formatCurrency(order.total_amount)}</span>
+          </div>
         </div>
 
         <div style="margin-top:16px;padding:12px 16px;border-radius:8px;background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;font-size:0.88rem;">
@@ -214,7 +232,16 @@ document.addEventListener("DOMContentLoaded", async () => {
               <div style="background:#f8fafc;padding:12px 16px;border-radius:8px;margin-bottom:12px;font-size:0.95rem;">
                 <p style="margin:4px 0;"><strong>Người nhận:</strong> ${order.shipping_name} — <strong>SĐT:</strong> ${order.shipping_phone}</p>
                 <p style="margin:4px 0;"><strong>Địa chỉ giao hàng:</strong> ${order.shipping_address}</p>
-                <p style="margin:4px 0;"><strong>Phương thức thanh toán:</strong> ${PAYMENT_LABELS[order.payment_method] || order.payment_method}</p>
+                <p style="margin:4px 0;">
+                  <strong>Phương thức thanh toán:</strong> ${PAYMENT_LABELS[order.payment_method] || order.payment_method}
+                  &nbsp;|&nbsp;
+                  <strong>Vận chuyển:</strong> ${order.shipping_method === "express" ? "⚡ Hỏa tốc" : "🚚 Tiêu chuẩn"} (${Number(order.shipping_fee) === 0 ? "Miễn phí" : Aqualife.formatCurrency(order.shipping_fee || 0)})
+                </p>
+                ${
+                  order.voucher_code
+                    ? `<p style="margin:4px 0;color:#0284c7;"><strong>Voucher:</strong> <span style="font-weight:700;background:#e0f2fe;padding:2px 8px;border-radius:4px;">${order.voucher_code}</span> (Giảm -${Aqualife.formatCurrency(order.discount_amount || 0)})</p>`
+                    : ""
+                }
               </div>
 
               <div style="margin-bottom:14px;">

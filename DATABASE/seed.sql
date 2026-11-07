@@ -233,3 +233,14 @@ INSERT INTO reviews (user_id, product_id, rating, comment, created_at)
 SELECT (SELECT id FROM users WHERE email = 'thanhthao@aqualife.com'), p.id, 4, 'Tôm Bác Sĩ rất chăm dọn ký sinh, màu đỏ trắng nổi bật trong bể reef. Sẽ tiếp tục ủng hộ shop!', NOW() - INTERVAL '2 days'
 FROM products p WHERE p.name = 'Tôm Bác Sĩ' LIMIT 1;
 
+-- ------------------------------------------------------------
+-- seed vouchers
+-- ------------------------------------------------------------
+INSERT INTO vouchers (code, discount_type, discount_value, max_discount, min_order_amount, usage_limit, expires_at) VALUES
+('AQUALIFE10', 'percent', 10, 50000, 200000, NULL, NULL),
+('FREESHIP', 'free_shipping', 0, 50000, 0, NULL, NULL),
+('AQUANEW', 'fixed', 30000, NULL, 100000, 100, NULL),
+('VIP50K', 'fixed', 50000, NULL, 500000, NULL, NULL),
+('OCEAN20', 'percent', 20, 100000, 300000, 50, NULL)
+ON CONFLICT (code) DO NOTHING;
+

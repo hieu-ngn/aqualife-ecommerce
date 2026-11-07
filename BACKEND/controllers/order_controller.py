@@ -1,8 +1,18 @@
 import re
 from flask import g, request, session
 from middleware.auth import login_required
+from decimal import Decimal, InvalidOperation
 from services import order_service
 from services.cart_service import InsufficientStockError, ProductNotFoundError
+from services.voucher_service import (
+    validate_voucher,
+    calculate_shipping_fee,
+    list_active_vouchers,
+    VoucherNotFoundError,
+    VoucherExpiredError,
+    VoucherUsageLimitError,
+    VoucherMinOrderError,
+)
 from utils.responses import success, error
 
 PHONE_RE = re.compile(r"^[0-9+\-\s()]{8,20}$")
@@ -74,6 +84,9 @@ def create_order():
             except (TypeError, ValueError):
                 continue
 
+    shipping_method = str(body.get("shipping_method") or "standard").strip().lower()
+    voucher_code = str(body.get("voucher_code") or "").strip() or None
+
     try:
         order = order_service.create_order(
             user_id=g.current_user["id"],
@@ -81,6 +94,8 @@ def create_order():
             shipping_phone=shipping_phone,
             shipping_address=shipping_address,
             payment_method=payment_method,
+            shipping_method=shipping_method,
+            voucher_code=voucher_code,
             fallback_items=fallback_items,
         )
     except order_service.EmptyCartError as exc:
@@ -88,6 +103,8 @@ def create_order():
     except ProductNotFoundError:
         return error("Product not found", 404)
     except InsufficientStockError as exc:
+        return error(str(exc), 400)
+    except (VoucherNotFoundError, VoucherExpiredError, VoucherUsageLimitError, VoucherMinOrderError) as exc:
         return error(str(exc), 400)
 
     session["cart"] = {}
@@ -126,3 +143,35 @@ def cancel_order(order_id: int):
         return error(str(exc), 400)
 
     return success(order)
+
+
+def list_vouchers():
+    """Lấy danh sách mã giảm giá đang hoạt động cho khách hàng."""
+    return success(list_active_vouchers())
+
+
+def apply_voucher():
+    """Kiểm tra và tính toán giảm giá của voucher trước khi đặt hàng."""
+    body = request.get_json(silent=True) or {}
+    code = str(body.get("code") or "").strip()
+    if not code:
+        return error("Vui lòng nhập mã giảm giá", 422)
+
+    raw_subtotal = body.get("subtotal")
+    try:
+        subtotal = Decimal(str(raw_subtotal)) if raw_subtotal is not None else Decimal("0")
+    except (InvalidOperation, TypeError):
+        return error("Giá trị đơn hàng không hợp lệ", 422)
+
+    shipping_method = str(body.get("shipping_method") or "standard").strip().lower()
+    shipping_fee = calculate_shipping_fee(shipping_method, subtotal)
+
+    try:
+        result = validate_voucher(code, subtotal, shipping_fee)
+        result["shipping_fee"] = float(shipping_fee)
+        result["total_amount"] = max(0.0, float(subtotal + shipping_fee) - result["discount_amount"])
+        return success(result)
+    except (VoucherNotFoundError, VoucherExpiredError, VoucherUsageLimitError, VoucherMinOrderError) as exc:
+        return error(str(exc), 400)
+    except Exception as exc:
+        return error(f"Lỗi kiểm tra voucher: {str(exc)}", 500)

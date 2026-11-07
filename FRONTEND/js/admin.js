@@ -1180,7 +1180,11 @@ async function loadOverview() {
                   <div><strong>${esc(o.shipping_name)}</strong></div>
                   <div class="muted" style="font-size:12px;">${esc(o.shipping_phone)}</div>
                 </td>
-                <td><strong>${window.Aqualife.formatCurrency(o.total_amount)}</strong></td>
+                <td>
+              <strong>${window.Aqualife.formatCurrency(o.total_amount)}</strong>
+              ${o.voucher_code ? `<div style="font-size:11px;color:#0284c7;">Mã: <code>${esc(o.voucher_code)}</code> (-${window.Aqualife.formatCurrency(o.discount_amount || 0)})</div>` : ""}
+              <div class="muted" style="font-size:11px;">Ship: ${o.shipping_method === 'express' ? '⚡ Hỏa tốc' : '🚚 Tiêu chuẩn'} (${Number(o.shipping_fee) === 0 ? '0₫' : window.Aqualife.formatCurrency(o.shipping_fee || 0)})</div>
+            </td>
                 <td>${orderStatusBadgeHtml(o.status)}</td>
               </tr>
             `
@@ -1271,7 +1275,11 @@ function renderAdminOrdersPage() {
               <div class="muted" style="font-size:12px;">${esc(o.shipping_address)}</div>
             </td>
             <td style="font-size:13px;">${itemsSummary || "-"}</td>
-            <td><strong>${window.Aqualife.formatCurrency(o.total_amount)}</strong></td>
+            <td>
+              <strong>${window.Aqualife.formatCurrency(o.total_amount)}</strong>
+              ${o.voucher_code ? `<div style="font-size:11px;color:#0284c7;">Mã: <code>${esc(o.voucher_code)}</code> (-${window.Aqualife.formatCurrency(o.discount_amount || 0)})</div>` : ""}
+              <div class="muted" style="font-size:11px;">Ship: ${o.shipping_method === 'express' ? '⚡ Hỏa tốc' : '🚚 Tiêu chuẩn'} (${Number(o.shipping_fee) === 0 ? '0₫' : window.Aqualife.formatCurrency(o.shipping_fee || 0)})</div>
+            </td>
             <td>${o.payment_method === "bank_transfer" ? "Chuyển khoản" : "COD"}</td>
             <td>${orderStatusBadgeHtml(o.status)}</td>
             <td>${actionControl}</td>

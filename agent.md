@@ -156,6 +156,7 @@ Mọi API trả về JSON thống nhất qua `utils/responses.py`:
   - Xây dựng API Danh mục (`/api/categories`) và Sản phẩm (`/api/products`, `/api/products/:id`).
   - Xây dựng API Giỏ hàng (`/api/cart` GET/POST/PUT/DELETE).
   - Xây dựng API Đặt hàng, Lịch sử đơn hàng & Hủy đơn (`/api/orders`, `/api/orders/:id`, `/api/orders/:id/cancel`).
+  - Hệ thống Phương thức Vận chuyển (Standard 30k, miễn phí từ 500k; Express 50k) và Hệ thống Mã giảm giá/Voucher (`/api/vouchers`, `/api/vouchers/apply`, bảng `vouchers`, tự động cập nhật số tiền VietQR và hiển thị hóa đơn).
   - Kết nối Frontend (`common.js`, `home.js`, `products.js`, `product-detail.js`, `cart.js`, `pay.js`, `orders.html`, `orders.js`) với Backend API.
 - **M09 – Hồ sơ Khách hàng & Đánh giá Sản phẩm (Đã hoàn thành)**:
   - API `GET/PUT /api/users/me`, `PUT /api/users/me/password` và `GET/POST /api/products/:id/reviews`, `PUT/DELETE /api/reviews/:id` (kiểm tra khách đã mua hàng mới được đánh giá).

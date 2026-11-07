@@ -7,6 +7,27 @@ document.addEventListener("DOMContentLoaded", async () => {
   const vietqrImgEl = document.getElementById("vietqr-img");
   const vietqrNoteEl = document.getElementById("vietqr-note");
 
+  // Shipping elements
+  const shippingCardStandard = document.getElementById("shipping-card-standard");
+  const shippingCardExpress = document.getElementById("shipping-card-express");
+  const shippingPriceStandardEl = document.getElementById("shipping-price-standard");
+
+  // Voucher elements
+  const voucherInputEl = document.getElementById("voucher-input");
+  const btnApplyVoucher = document.getElementById("btn-apply-voucher");
+  const btnRemoveVoucher = document.getElementById("btn-remove-voucher");
+  const voucherChipsContainer = document.getElementById("voucher-chips-container");
+  const voucherAppliedBox = document.getElementById("voucher-applied-box");
+  const voucherAppliedCode = document.getElementById("voucher-applied-code");
+  const voucherAppliedText = document.getElementById("voucher-applied-text");
+  const voucherFeedbackEl = document.getElementById("voucher-feedback");
+
+  // Breakdown summary elements
+  const summarySubtotalEl = document.getElementById("summary-subtotal");
+  const summaryShippingEl = document.getElementById("summary-shipping");
+  const summaryDiscountEl = document.getElementById("summary-discount");
+  const breakdownDiscountRow = document.getElementById("breakdown-discount-row");
+
   const formFields = {
     firstName: document.getElementById("first-name"),
     lastName: document.getElementById("last-name"),
@@ -18,6 +39,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
 
   let products = [];
+  let currentSubtotal = 0;
+  let currentShippingMethod = "standard";
+  let currentShippingFee = 30000;
+  let appliedVoucher = null;
+  let currentDiscount = 0;
   let currentTotalAmount = 0;
 
   function showFeedback(type, message) {
@@ -31,6 +57,97 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (!feedbackEl) return;
     feedbackEl.className = "alert hidden";
     feedbackEl.textContent = "";
+  }
+
+  function showVoucherFeedback(type, message) {
+    if (!voucherFeedbackEl) return;
+    voucherFeedbackEl.className = `alert alert-${type}`;
+    voucherFeedbackEl.textContent = message;
+    voucherFeedbackEl.classList.remove("hidden");
+  }
+
+  function hideVoucherFeedback() {
+    if (!voucherFeedbackEl) return;
+    voucherFeedbackEl.className = "alert hidden";
+    voucherFeedbackEl.textContent = "";
+  }
+
+  function calculateShippingFee(method, subtotal) {
+    if (method === "express") {
+      return 50000;
+    }
+    // Standard: 30k, or free if subtotal >= 500k
+    return subtotal >= 500000 ? 0 : 30000;
+  }
+
+  function updateTotalsDisplay() {
+    // 1. Calculate shipping fee
+    currentShippingFee = calculateShippingFee(currentShippingMethod, currentSubtotal);
+
+    // Update standard shipping label display
+    if (shippingPriceStandardEl) {
+      if (currentSubtotal >= 500000) {
+        shippingPriceStandardEl.innerHTML = `<span style="color:#16a34a;font-weight:700;">Miễn phí</span> <small style="text-decoration:line-through;color:#94a3b8;font-weight:normal;">30.000 ₫</small>`;
+      } else {
+        shippingPriceStandardEl.textContent = "30.000 ₫";
+      }
+    }
+
+    // 2. Calculate voucher discount if applied
+    if (appliedVoucher) {
+      if (appliedVoucher.min_order_amount && currentSubtotal < appliedVoucher.min_order_amount) {
+        showVoucherFeedback(
+          "error",
+          `Mã ${appliedVoucher.code} yêu cầu đơn tối thiểu ${Aqualife.formatCurrency(appliedVoucher.min_order_amount)}`
+        );
+        removeVoucher(true);
+      } else {
+        const dtype = appliedVoucher.discount_type;
+        const dval = Number(appliedVoucher.discount_value || 0);
+        const maxD = appliedVoucher.max_discount ? Number(appliedVoucher.max_discount) : null;
+
+        if (dtype === "percent") {
+          let disc = (currentSubtotal * dval) / 100;
+          if (maxD !== null) disc = Math.min(disc, maxD);
+          currentDiscount = disc;
+        } else if (dtype === "fixed") {
+          currentDiscount = Math.min(dval, currentSubtotal);
+        } else if (dtype === "free_shipping") {
+          currentDiscount = maxD !== null ? Math.min(currentShippingFee, maxD) : currentShippingFee;
+        } else {
+          currentDiscount = 0;
+        }
+      }
+    } else {
+      currentDiscount = 0;
+    }
+
+    // 3. Final total calculation
+    currentTotalAmount = Math.max(0, currentSubtotal + currentShippingFee - currentDiscount);
+
+    // 4. Update DOM breakdown
+    if (summarySubtotalEl) {
+      summarySubtotalEl.textContent = Aqualife.formatCurrency(currentSubtotal);
+    }
+    if (summaryShippingEl) {
+      summaryShippingEl.textContent =
+        currentShippingFee === 0 ? "Miễn phí" : Aqualife.formatCurrency(currentShippingFee);
+    }
+    if (summaryDiscountEl && breakdownDiscountRow) {
+      if (currentDiscount > 0) {
+        breakdownDiscountRow.classList.remove("hidden");
+        summaryDiscountEl.textContent = `-${Aqualife.formatCurrency(currentDiscount)}`;
+      } else {
+        breakdownDiscountRow.classList.add("hidden");
+        summaryDiscountEl.textContent = "-0 ₫";
+      }
+    }
+    if (orderTotalEl) {
+      orderTotalEl.textContent = Aqualife.formatCurrency(currentTotalAmount);
+    }
+
+    // 5. Update VietQR dynamic amount
+    updateVietQRPreview();
   }
 
   function updateVietQRPreview() {
@@ -53,6 +170,112 @@ document.addEventListener("DOMContentLoaded", async () => {
       )}`;
     }
     vietqrBoxEl.classList.remove("hidden");
+  }
+
+  async function loadSuggestedVouchers() {
+    if (!voucherChipsContainer) return;
+    try {
+      const res = await Aqualife.apiFetch("/vouchers");
+      const vouchers = Array.isArray(res) ? res : res?.data || [];
+      if (!vouchers.length) {
+        voucherChipsContainer.innerHTML = "";
+        return;
+      }
+
+      voucherChipsContainer.innerHTML = `
+        <span style="font-size:12px;color:#64748b;display:inline-flex;align-items:center;">Gợi ý mã:</span>
+        ${vouchers
+          .map(
+            (v) => `
+          <button type="button" class="voucher-chip" data-code="${v.code}" title="${v.description}">
+            🏷️ <strong>${v.code}</strong>
+          </button>
+        `
+          )
+          .join("")}
+      `;
+
+      voucherChipsContainer.querySelectorAll(".voucher-chip").forEach((chip) => {
+        chip.addEventListener("click", () => {
+          const code = chip.dataset.code;
+          if (voucherInputEl) voucherInputEl.value = code;
+          applyVoucher(code);
+        });
+      });
+    } catch {
+      // Vouchers load failure shouldn't block checkout
+    }
+  }
+
+  async function applyVoucher(code) {
+    hideVoucherFeedback();
+    const cleanCode = (code || (voucherInputEl ? voucherInputEl.value : "")).trim().toUpperCase();
+    if (!cleanCode) {
+      showVoucherFeedback("error", "Vui lòng nhập mã giảm giá.");
+      return;
+    }
+
+    if (currentSubtotal <= 0) {
+      showVoucherFeedback("error", "Giỏ hàng trống, không thể áp dụng mã.");
+      return;
+    }
+
+    if (btnApplyVoucher) btnApplyVoucher.disabled = true;
+
+    try {
+      const res = await Aqualife.apiFetch("/vouchers/apply", {
+        method: "POST",
+        body: JSON.stringify({
+          code: cleanCode,
+          subtotal: currentSubtotal,
+          shipping_method: currentShippingMethod,
+        }),
+      });
+
+      const voucherData = res.data || res;
+      appliedVoucher = voucherData;
+
+      if (voucherAppliedBox && voucherAppliedCode && voucherAppliedText) {
+        voucherAppliedCode.textContent = voucherData.code;
+        voucherAppliedText.textContent = voucherData.message || `Giảm ${Aqualife.formatCurrency(voucherData.discount_amount)}`;
+        voucherAppliedBox.classList.remove("hidden");
+      }
+
+      if (voucherInputEl) voucherInputEl.value = "";
+      showVoucherFeedback("success", voucherData.message || `Đã áp dụng mã ${voucherData.code}!`);
+      updateTotalsDisplay();
+    } catch (err) {
+      showVoucherFeedback("error", err.message || `Mã giảm giá '${cleanCode}' không hợp lệ hoặc đã hết hạn.`);
+    } finally {
+      if (btnApplyVoucher) btnApplyVoucher.disabled = false;
+    }
+  }
+
+  function removeVoucher(silent = false) {
+    appliedVoucher = null;
+    currentDiscount = 0;
+    if (voucherAppliedBox) voucherAppliedBox.classList.add("hidden");
+    if (!silent) {
+      hideVoucherFeedback();
+      showVoucherFeedback("info", "Đã gỡ mã giảm giá.");
+    }
+    updateTotalsDisplay();
+  }
+
+  function setupShippingMethods() {
+    const shippingRadios = document.querySelectorAll('input[name="shipping_method"]');
+    shippingRadios.forEach((radio) => {
+      radio.addEventListener("change", (e) => {
+        currentShippingMethod = e.target.value;
+        if (shippingCardStandard) {
+          shippingCardStandard.classList.toggle("selected", currentShippingMethod === "standard");
+        }
+        if (shippingCardExpress) {
+          shippingCardExpress.classList.toggle("selected", currentShippingMethod === "express");
+        }
+        updateTotalsDisplay();
+      });
+    });
   }
 
   async function prefillUserInfo() {
@@ -79,10 +302,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         formFields.address.value = user.address;
       }
     } catch {
-      showFeedback(
-        "error",
-        "Bạn chưa đăng nhập. Vui lòng đăng nhập để đặt hàng."
-      );
+      showFeedback("error", "Bạn chưa đăng nhập. Vui lòng đăng nhập để đặt hàng.");
       setTimeout(() => {
         window.location.href = "auth.html?redirect=pay.html";
       }, 1500);
@@ -100,10 +320,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       if (!entries.length) {
         orderListEl.innerHTML = "<p class='empty'>Giỏ hàng không có sản phẩm.</p>";
-        orderTotalEl.textContent = Aqualife.formatCurrency(0);
-        currentTotalAmount = 0;
+        currentSubtotal = 0;
+        updateTotalsDisplay();
         placeOrderBtn.disabled = true;
-        updateVietQRPreview();
         return;
       }
 
@@ -132,10 +351,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         `;
       });
 
-      currentTotalAmount = total;
+      currentSubtotal = total;
       orderListEl.innerHTML = html.join("");
-      orderTotalEl.textContent = Aqualife.formatCurrency(total);
-      updateVietQRPreview();
+      updateTotalsDisplay();
     } catch (err) {
       console.error(err);
       orderListEl.innerHTML = "<p class='error'>Lỗi tải dữ liệu sản phẩm.</p>";
@@ -171,8 +389,26 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
+  // Setup shipping choices and vouchers
+  setupShippingMethods();
+  if (btnApplyVoucher) {
+    btnApplyVoucher.addEventListener("click", () => applyVoucher());
+  }
+  if (voucherInputEl) {
+    voucherInputEl.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        applyVoucher();
+      }
+    });
+  }
+  if (btnRemoveVoucher) {
+    btnRemoveVoucher.addEventListener("click", () => removeVoucher());
+  }
+
   await prefillUserInfo();
   await renderOrder();
+  await loadSuggestedVouchers();
 
   document.querySelectorAll('input[name="payment"]').forEach((radio) => {
     radio.addEventListener("change", updateVietQRPreview);
@@ -230,16 +466,20 @@ document.addEventListener("DOMContentLoaded", async () => {
       })
       .filter((item) => Number.isInteger(item.product_id) && item.product_id > 0);
 
+    const orderPayload = {
+      shipping_name: shippingName,
+      shipping_phone: shippingPhone,
+      shipping_address: shippingAddress,
+      payment_method: paymentMethod,
+      shipping_method: currentShippingMethod,
+      voucher_code: appliedVoucher ? appliedVoucher.code : null,
+      items: itemsPayload,
+    };
+
     try {
       const order = await Aqualife.apiFetch("/orders", {
         method: "POST",
-        body: JSON.stringify({
-          shipping_name: shippingName,
-          shipping_phone: shippingPhone,
-          shipping_address: shippingAddress,
-          payment_method: paymentMethod,
-          items: itemsPayload,
-        }),
+        body: JSON.stringify(orderPayload),
       });
 
       Aqualife.saveCart({});

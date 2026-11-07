@@ -109,6 +109,12 @@ CREATE TABLE orders (
     shipping_address    TEXT NOT NULL,
     payment_method      VARCHAR(30) NOT NULL
                             CHECK (payment_method IN ('cod', 'bank_transfer')),
+    shipping_method     VARCHAR(30) NOT NULL DEFAULT 'standard'
+                            CHECK (shipping_method IN ('standard', 'express')),
+    shipping_fee        NUMERIC(12, 2) NOT NULL DEFAULT 0 CHECK (shipping_fee >= 0),
+    subtotal_amount     NUMERIC(12, 2) NOT NULL DEFAULT 0 CHECK (subtotal_amount >= 0),
+    voucher_code        VARCHAR(50) DEFAULT NULL,
+    discount_amount     NUMERIC(12, 2) NOT NULL DEFAULT 0 CHECK (discount_amount >= 0),
     created_at          TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at          TIMESTAMP NOT NULL DEFAULT NOW()
 );
@@ -151,6 +157,25 @@ CREATE TABLE reviews (
 CREATE INDEX idx_reviews_product_id ON reviews(product_id);
 
 -- ------------------------------------------------------------
+-- vouchers
+-- ------------------------------------------------------------
+CREATE TABLE vouchers (
+    id              BIGSERIAL PRIMARY KEY,
+    code            VARCHAR(50) UNIQUE NOT NULL,
+    discount_type   VARCHAR(20) NOT NULL CHECK (discount_type IN ('percent', 'fixed', 'free_shipping')),
+    discount_value  NUMERIC(12, 2) NOT NULL CHECK (discount_value >= 0),
+    max_discount    NUMERIC(12, 2) DEFAULT NULL,     -- cap for percent type
+    min_order_amount NUMERIC(12, 2) NOT NULL DEFAULT 0,
+    usage_limit     INTEGER DEFAULT NULL,             -- NULL = unlimited
+    used_count      INTEGER NOT NULL DEFAULT 0,
+    starts_at       TIMESTAMP DEFAULT NOW(),
+    expires_at      TIMESTAMP DEFAULT NULL,           -- NULL = never expires
+    status          VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'inactive')),
+    created_at      TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at      TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+-- ------------------------------------------------------------
 -- updated_at auto-touch trigger (keeps updated_at fresh on UPDATE)
 -- ------------------------------------------------------------
 CREATE OR REPLACE FUNCTION set_updated_at()
@@ -172,4 +197,6 @@ CREATE TRIGGER trg_cart_updated_at BEFORE UPDATE ON cart
 CREATE TRIGGER trg_orders_updated_at BEFORE UPDATE ON orders
     FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 CREATE TRIGGER trg_reviews_updated_at BEFORE UPDATE ON reviews
+    FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+CREATE TRIGGER trg_vouchers_updated_at BEFORE UPDATE ON vouchers
     FOR EACH ROW EXECUTE FUNCTION set_updated_at();

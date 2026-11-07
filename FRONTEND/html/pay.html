@@ -79,13 +79,79 @@
         <aside class="checkout-summary card">
           <h2>Thông tin đơn hàng</h2>
           <div id="order-list" class="order-list"></div>
-          <div class="order-total">
+
+          <div class="field-group">
+            <label style="font-weight:600;margin-bottom:4px;">Phương thức vận chuyển</label>
+            <div class="shipping-options">
+              <label class="shipping-card selected" id="shipping-card-standard">
+                <input type="radio" name="shipping_method" value="standard" checked />
+                <div class="shipping-card-content">
+                  <div class="shipping-card-header">
+                    <span>🚚 Giao hàng Tiêu chuẩn</span>
+                    <span class="shipping-card-price" id="shipping-price-standard">30.000 ₫</span>
+                  </div>
+                  <div class="shipping-card-desc">Giao 2–3 ngày • Miễn phí cho đơn từ 500.000 ₫</div>
+                </div>
+              </label>
+
+              <label class="shipping-card" id="shipping-card-express">
+                <input type="radio" name="shipping_method" value="express" />
+                <div class="shipping-card-content">
+                  <div class="shipping-card-header">
+                    <span>⚡ Giao hàng Hỏa tốc</span>
+                    <span class="shipping-card-price">50.000 ₫</span>
+                  </div>
+                  <div class="shipping-card-desc">Giao nhanh trong 2–4 giờ • Đóng thùng xốp oxy chuyên dụng</div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <div class="voucher-section">
+            <label style="font-weight:600;font-size:13px;display:block;margin-bottom:6px;color:#0369a1;">
+              🎟️ Mã giảm giá / Voucher
+            </label>
+            <div class="voucher-input-group">
+              <input id="voucher-input" class="input" type="text" placeholder="Nhập mã voucher (vd: AQUALIFE10)" />
+              <button id="btn-apply-voucher" class="btn btn-secondary" type="button" style="white-space:nowrap;padding:8px 14px;">Áp dụng</button>
+            </div>
+
+            <div id="voucher-chips-container" class="voucher-chips">
+              <!-- Gợi ý voucher tải động từ API -->
+            </div>
+
+            <div id="voucher-applied-box" class="voucher-applied-box hidden">
+              <div>
+                <span id="voucher-applied-code" style="font-weight:700;"></span>:
+                <span id="voucher-applied-text"></span>
+              </div>
+              <button id="btn-remove-voucher" class="voucher-remove-btn" type="button" title="Gỡ mã giảm giá">✕ Gỡ</button>
+            </div>
+            <div id="voucher-feedback" class="alert hidden" style="margin-top:8px;padding:8px 10px;font-size:12px;"></div>
+          </div>
+
+          <div class="order-breakdown">
+            <div class="breakdown-row">
+              <span>Tạm tính hàng:</span>
+              <span id="summary-subtotal">0 ₫</span>
+            </div>
+            <div class="breakdown-row">
+              <span>Phí vận chuyển:</span>
+              <span id="summary-shipping">30.000 ₫</span>
+            </div>
+            <div id="breakdown-discount-row" class="breakdown-row discount-row hidden">
+              <span>Giảm giá voucher:</span>
+              <span id="summary-discount">-0 ₫</span>
+            </div>
+          </div>
+
+          <div class="order-total" style="margin-bottom:16px;">
             <span>Tổng thanh toán</span>
-            <strong id="order-total">0 ₫</strong>
+            <strong id="order-total" style="color:var(--primary-dark);">0 ₫</strong>
           </div>
 
           <div class="field-group">
-            <label>Phương thức thanh toán</label>
+            <label style="font-weight:600;">Phương thức thanh toán</label>
             <div class="payment-options">
               <label><input type="radio" name="payment" value="cash" checked /> Tiền mặt (COD)</label>
               <label><input type="radio" name="payment" value="transfer" /> Chuyển khoản VietQR</label>
@@ -98,7 +164,7 @@
             <p id="vietqr-note" class="muted" style="margin:6px 0 0 0;font-size:0.84rem;"></p>
           </div>
 
-          <button id="place-order" class="btn btn-primary" type="button">Đặt hàng</button>
+          <button id="place-order" class="btn btn-primary" type="button" style="width:100%;padding:12px;font-size:16px;font-weight:700;">Đặt hàng ngay</button>
           <div id="order-feedback" class="alert hidden"></div>
         </aside>
 

@@ -106,6 +106,58 @@ GET   /api/orders/:id
 PATCH /api/orders/:id/cancel
 ```
 
+`POST /api/orders` payload:
+```json
+{
+  "shipping_name": "Nguyễn Văn A",
+  "shipping_phone": "0901234567",
+  "shipping_address": "123 Đường Biển, Hà Nội",
+  "payment_method": "cod", // "cod" | "bank_transfer"
+  "shipping_method": "standard", // "standard" (30k, freeship >= 500k) | "express" (50k)
+  "voucher_code": "AQUALIFE10", // optional voucher code
+  "items": [
+    { "product_id": 1, "quantity": 2, "selected_size": "M (10-12cm)" }
+  ]
+}
+```
+
+### Vouchers
+
+Public & authenticated:
+
+```text
+GET  /api/vouchers
+POST /api/vouchers/apply
+```
+
+`POST /api/vouchers/apply` payload:
+```json
+{
+  "code": "AQUALIFE10",
+  "subtotal": 250000,
+  "shipping_method": "standard"
+}
+```
+
+Response:
+```json
+{
+  "success": true,
+  "data": {
+    "voucher_id": 1,
+    "code": "AQUALIFE10",
+    "discount_type": "percent",
+    "discount_value": 10.0,
+    "max_discount": 50000.0,
+    "min_order_amount": 200000.0,
+    "discount_amount": 25000.0,
+    "shipping_fee": 30000.0,
+    "total_amount": 255000.0,
+    "message": "✅ Giảm 10% (tối đa 50.000₫) — Bạn tiết kiệm 25.000₫"
+  }
+}
+```
+
 ### Reviews
 
 ```text

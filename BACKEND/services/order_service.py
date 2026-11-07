@@ -2,6 +2,14 @@ from decimal import Decimal
 from config.database import get_db_cursor
 from services.cart_service import InsufficientStockError, ProductNotFoundError
 from services.product_service import change_size_stock, resolve_size
+from services.voucher_service import (
+    calculate_shipping_fee,
+    apply_voucher_in_transaction,
+    VoucherNotFoundError,
+    VoucherExpiredError,
+    VoucherUsageLimitError,
+    VoucherMinOrderError,
+)
 
 
 class EmptyCartError(Exception):
@@ -21,6 +29,7 @@ class InvalidOrderStatusError(Exception):
 
 
 ALLOWED_PAYMENT_METHODS = {"cod", "bank_transfer"}
+ALLOWED_SHIPPING_METHODS = {"standard", "express"}
 CANCELLABLE_STATUSES = {"pending", "confirmed"}
 
 
@@ -47,6 +56,11 @@ def _serialize_order(row, items=None):
     return {
         "id": row["id"],
         "user_id": row["user_id"],
+        "subtotal_amount": _serialize_number(row.get("subtotal_amount", row["total_amount"])),
+        "shipping_method": row.get("shipping_method", "standard"),
+        "shipping_fee": _serialize_number(row.get("shipping_fee", 0)),
+        "voucher_code": row.get("voucher_code"),
+        "discount_amount": _serialize_number(row.get("discount_amount", 0)),
         "total_amount": _serialize_number(row["total_amount"]),
         "status": row["status"],
         "shipping_name": row["shipping_name"],
@@ -81,10 +95,16 @@ def create_order(
     shipping_phone: str,
     shipping_address: str,
     payment_method: str,
+    shipping_method: str = "standard",
+    voucher_code: str | None = None,
     fallback_items: list[dict] | None = None,
 ) -> dict:
     if payment_method not in ALLOWED_PAYMENT_METHODS:
         raise ValueError("Phương thức thanh toán không hợp lệ")
+
+    shipping_method = (shipping_method or "standard").strip().lower()
+    if shipping_method not in ALLOWED_SHIPPING_METHODS:
+        shipping_method = "standard"
 
     with get_db_cursor(commit=True) as cur:
 
@@ -140,7 +160,7 @@ def create_order(
         locked_products = {r["id"]: r for r in cur.fetchall()}
 
         # 3. Validate product status & stock, and calculate authoritative totals
-        total_amount = Decimal("0")
+        subtotal_amount = Decimal("0")
         prepared_items = []
 
         for pid in product_ids:
@@ -158,7 +178,7 @@ def create_order(
             if chosen["stock"] < qty:
                 raise InsufficientStockError(f"{product['name']} ({chosen['label']})", chosen["stock"])
             subtotal = unit_price * Decimal(qty)
-            total_amount += subtotal
+            subtotal_amount += subtotal
 
             snap_name = (
                 f"{product['name']} ({resolved_size})"
@@ -178,20 +198,39 @@ def create_order(
                 }
             )
 
-        # 4. Insert order
+        # 4. Calculate shipping fee & apply voucher if provided
+        shipping_fee = calculate_shipping_fee(shipping_method, subtotal_amount)
+        discount_amount = Decimal("0")
+        applied_voucher_code = None
+
+        if voucher_code and voucher_code.strip():
+            discount_amount, applied_voucher_code = apply_voucher_in_transaction(
+                cur, voucher_code.strip(), subtotal_amount, shipping_fee
+            )
+
+        total_amount = max(Decimal("0"), subtotal_amount + shipping_fee - discount_amount)
+
+        # 5. Insert order
         cur.execute(
             """
             INSERT INTO orders (
-                user_id, total_amount, status,
+                user_id, subtotal_amount, shipping_method, shipping_fee,
+                voucher_code, discount_amount, total_amount, status,
                 shipping_name, shipping_phone, shipping_address, payment_method
             )
-            VALUES (%s, %s, 'pending', %s, %s, %s, %s)
-            RETURNING id, user_id, total_amount, status,
+            VALUES (%s, %s, %s, %s, %s, %s, %s, 'pending', %s, %s, %s, %s)
+            RETURNING id, user_id, total_amount, subtotal_amount, shipping_method,
+                      shipping_fee, voucher_code, discount_amount, status,
                       shipping_name, shipping_phone, shipping_address,
                       payment_method, created_at, updated_at
             """,
             (
                 user_id,
+                subtotal_amount,
+                shipping_method,
+                shipping_fee,
+                applied_voucher_code,
+                discount_amount,
                 total_amount,
                 shipping_name,
                 shipping_phone,
@@ -202,7 +241,7 @@ def create_order(
         order_row = cur.fetchone()
         order_id = order_row["id"]
 
-        # 5. Insert order_items (snapshot) & decrease product stock
+        # 6. Insert order_items (snapshot) & decrease product stock
         created_items = []
         for item in prepared_items:
             cur.execute(
@@ -231,7 +270,7 @@ def create_order(
 
             change_size_stock(cur, item["product_id"], item["size_label"], -item["quantity"])
 
-        # 6. Clear cart
+        # 7. Clear cart
         if cart_id is not None:
             cur.execute("DELETE FROM cart_items WHERE cart_id = %s", (cart_id,))
             cur.execute("UPDATE cart SET updated_at = NOW() WHERE id = %s", (cart_id,))
@@ -243,7 +282,8 @@ def list_orders_for_user(user_id: int) -> list[dict]:
     with get_db_cursor() as cur:
         cur.execute(
             """
-            SELECT id, user_id, total_amount, status,
+            SELECT id, user_id, total_amount, subtotal_amount, shipping_method,
+                   shipping_fee, voucher_code, discount_amount, status,
                    shipping_name, shipping_phone, shipping_address,
                    payment_method, created_at, updated_at
             FROM orders
@@ -280,7 +320,8 @@ def get_order_for_user(user_id: int, order_id: int) -> dict:
     with get_db_cursor() as cur:
         cur.execute(
             """
-            SELECT id, user_id, total_amount, status,
+            SELECT id, user_id, total_amount, subtotal_amount, shipping_method,
+                   shipping_fee, voucher_code, discount_amount, status,
                    shipping_name, shipping_phone, shipping_address,
                    payment_method, created_at, updated_at
             FROM orders
@@ -302,7 +343,8 @@ def cancel_order_for_user(user_id: int, order_id: int) -> dict:
     with get_db_cursor(commit=True) as cur:
         cur.execute(
             """
-            SELECT id, user_id, total_amount, status,
+            SELECT id, user_id, total_amount, subtotal_amount, shipping_method,
+                   shipping_fee, voucher_code, discount_amount, status,
                    shipping_name, shipping_phone, shipping_address,
                    payment_method, created_at, updated_at
             FROM orders
@@ -326,13 +368,21 @@ def cancel_order_for_user(user_id: int, order_id: int) -> dict:
             UPDATE orders
             SET status = 'cancelled'
             WHERE id = %s
-            RETURNING id, user_id, total_amount, status,
+            RETURNING id, user_id, total_amount, subtotal_amount, shipping_method,
+                      shipping_fee, voucher_code, discount_amount, status,
                       shipping_name, shipping_phone, shipping_address,
                       payment_method, created_at, updated_at
             """,
             (order_id,),
         )
         updated_order = cur.fetchone()
+
+        # Restore voucher usage count if applied
+        if order.get("voucher_code"):
+            cur.execute(
+                "UPDATE vouchers SET used_count = GREATEST(0, used_count - 1) WHERE code = %s",
+                (order["voucher_code"],),
+            )
 
         # Restore stock for all items in the cancelled order
         cur.execute(

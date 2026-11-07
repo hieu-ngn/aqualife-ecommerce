@@ -19,6 +19,45 @@ def _ensure_schema():
         )
         _ensure_support_tickets_table(cur)
 
+        # Vouchers table
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS vouchers (
+                id              BIGSERIAL PRIMARY KEY,
+                code            VARCHAR(50) UNIQUE NOT NULL,
+                discount_type   VARCHAR(20) NOT NULL CHECK (discount_type IN ('percent', 'fixed', 'free_shipping')),
+                discount_value  NUMERIC(12, 2) NOT NULL CHECK (discount_value >= 0),
+                max_discount    NUMERIC(12, 2) DEFAULT NULL,
+                min_order_amount NUMERIC(12, 2) NOT NULL DEFAULT 0,
+                usage_limit     INTEGER DEFAULT NULL,
+                used_count      INTEGER NOT NULL DEFAULT 0,
+                starts_at       TIMESTAMP DEFAULT NOW(),
+                expires_at      TIMESTAMP DEFAULT NULL,
+                status          VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'inactive')),
+                created_at      TIMESTAMP NOT NULL DEFAULT NOW(),
+                updated_at      TIMESTAMP NOT NULL DEFAULT NOW()
+            )
+        """)
+        # Shipping & voucher columns on orders
+        for col_sql in [
+            "ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipping_method VARCHAR(30) NOT NULL DEFAULT 'standard'",
+            "ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipping_fee NUMERIC(12, 2) NOT NULL DEFAULT 0",
+            "ALTER TABLE orders ADD COLUMN IF NOT EXISTS subtotal_amount NUMERIC(12, 2) NOT NULL DEFAULT 0",
+            "ALTER TABLE orders ADD COLUMN IF NOT EXISTS voucher_code VARCHAR(50) DEFAULT NULL",
+            "ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount_amount NUMERIC(12, 2) NOT NULL DEFAULT 0",
+        ]:
+            cur.execute(col_sql)
+        # Seed default vouchers
+        cur.execute("""
+            INSERT INTO vouchers (code, discount_type, discount_value, max_discount, min_order_amount, usage_limit)
+            VALUES
+                ('AQUALIFE10', 'percent', 10, 50000, 200000, NULL),
+                ('FREESHIP', 'free_shipping', 0, 50000, 0, NULL),
+                ('AQUANEW', 'fixed', 30000, NULL, 100000, 100),
+                ('VIP50K', 'fixed', 50000, NULL, 500000, NULL),
+                ('OCEAN20', 'percent', 20, 100000, 300000, 50)
+            ON CONFLICT (code) DO NOTHING
+        """)
+
 
 def create_app():
     app = Flask(__name__)
@@ -47,12 +86,14 @@ def create_app():
     from routes.user_routes import user_bp
     from routes.review_routes import review_bp
     from routes.admin_routes import admin_bp
+    from routes.voucher_routes import voucher_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(category_bp)
     app.register_blueprint(product_bp)
     app.register_blueprint(cart_bp)
     app.register_blueprint(order_bp)
+    app.register_blueprint(voucher_bp)
     app.register_blueprint(user_bp)
     app.register_blueprint(review_bp)
     app.register_blueprint(admin_bp)
